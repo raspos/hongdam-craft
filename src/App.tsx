@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { ENDINGS } from './data/endings';
 import {
   initializeNewRun,
@@ -59,11 +59,22 @@ const HongdamAppInner: React.FC = () => {
   } | null>(null);
 
   const [finishedCount, setFinishedCount] = useState<number>(() => getFinishedRunCount());
+  const recordedEndingPlayIdRef = useRef<string | null>(
+    gameState.phase === 'ending' ? gameState.playId : null
+  );
 
   // Persist every gameState change automatically to localStorage
   useEffect(() => {
     saveGameState(gameState);
   }, [gameState]);
+
+  // Increment completed run counter purely once per unique playId upon reaching ending
+  useEffect(() => {
+    if (gameState.phase === 'ending' && recordedEndingPlayIdRef.current !== gameState.playId) {
+      recordedEndingPlayIdRef.current = gameState.playId;
+      setFinishedCount(recordFinishedRunCount());
+    }
+  }, [gameState.phase, gameState.playId]);
 
   // Sync URL query param when switching between Game & Data Lab
   const handleSwitchView = (v: 'game' | 'datalab') => {
@@ -109,7 +120,6 @@ const HongdamAppInner: React.FC = () => {
           propType: endDef.sceneAction,
           timestamp: Date.now(),
         };
-        setFinishedCount(recordFinishedRunCount());
       }
       return next;
     });
@@ -126,7 +136,6 @@ const HongdamAppInner: React.FC = () => {
           propType: endDef.sceneAction,
           timestamp: Date.now(),
         };
-        setFinishedCount(recordFinishedRunCount());
       }
       return next;
     });
@@ -387,11 +396,7 @@ const HongdamAppInner: React.FC = () => {
             if (modalCopy.mode === 'lethal_skill' && modalCopy.skillId) {
               executeSkillConfirmed(modalCopy.skillId);
             } else if (modalCopy.mode === 'resignation') {
-              setGameState((prev) => {
-                const next = triggerVoluntaryResignation(prev);
-                setFinishedCount(recordFinishedRunCount());
-                return next;
-              });
+              setGameState((prev) => triggerVoluntaryResignation(prev));
             }
           }}
         />

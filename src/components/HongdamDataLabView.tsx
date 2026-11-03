@@ -160,7 +160,7 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
       .join(' ');
 
     return (
-      <svg viewBox="0 0 280 270" className="w-full max-w-[300px] mx-auto">
+      <svg viewBox="-24 0 328 270" className="w-full max-w-[300px] mx-auto">
         {[0.25, 0.5, 0.75, 1.0].map((ring) => (
           <polygon
             key={ring}

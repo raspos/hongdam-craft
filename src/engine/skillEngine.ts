@@ -125,8 +125,21 @@ export function evaluateSkillPreview(state: GameState, skillId: string): SkillEx
   }
 
   // Context synergy previews
-  if (battle.buffs.factChecked && (skill.id === 'A07_press_statement' || skill.id === 'E36_correct_misinfo' || skill.id === 'C23_emergency_press_conf')) {
+  let flatPressureBonus = 0;
+  if (
+    battle.buffs.factChecked &&
+    (skill.id === 'A07_press_statement' ||
+      skill.id === 'A10_extra_materials' ||
+      skill.id === 'C23_emergency_press_conf')
+  ) {
     pMult *= 1.45;
+    if (affinityRating === 'neutral') affinityRating = 'good';
+  }
+  if (
+    (battle.buffs.factChecked || battle.buffs.disclosureAudited) &&
+    skill.id === 'E36_correct_misinfo'
+  ) {
+    flatPressureBonus -= 10;
     if (affinityRating === 'neutral') affinityRating = 'good';
   }
   if (lead.isAnalyzed) {
@@ -138,7 +151,7 @@ export function evaluateSkillPreview(state: GameState, skillId: string): SkillEx
     pMult *= BALANCE.SAME_CATEGORY_STREAK_PENALTY[idx];
   }
 
-  const expectedPressureDelta = Math.round(skill.pressureDelta * pMult);
+  const expectedPressureDelta = Math.round((skill.pressureDelta + flatPressureBonus) * pMult);
   const expectedTrustDelta = Math.round(skill.trustDelta * tMult);
   const expectedRiskDelta = Math.round(skill.riskDelta + riskExtra);
   const expectedReputationDelta = Math.round(skill.reputationDelta);
@@ -543,6 +556,11 @@ export function executePlayerSkill(
       // Standard skills (A01~A10)
       if (skill.id === 'A05_dinner_drinks' || skill.id === 'A06_bomb_shot') {
         if (!backfired && memRec) memRec.winedAndDined += 1;
+        if (skill.id === 'A06_bomb_shot') {
+          buffs.hangoverNextTurn = true;
+          extraNoteKo = '폭탄주 투혼 발휘! (다음 턴 숙취로 체력 소모 +5 주의)';
+          extraNoteEn = 'Bomb-shot gambit played! (Next turn +5 HP hangover penalty)';
+        }
       }
       if ((skill.id === 'A07_press_statement' || skill.id === 'A10_extra_materials') && buffs.factChecked) {
         pressureDelta = Math.round(pressureDelta * 1.45);

@@ -337,6 +337,40 @@ function simulateStageWithPlan(
   };
 }
 
+export function getWhatIfSkillOptionsAtTurn(
+  state: GameState,
+  stage: StageNumber,
+  turnIndex: number
+): {
+  skillId: string;
+  usable: boolean;
+  lockReasonKo?: string;
+  lockReasonEn?: string;
+}[] {
+  const snap = state.stageSnapshots[stage];
+  if (!snap || snap.chosenSkillSequence.length === 0) return [];
+
+  let sim = restoreStateFromStageSnapshot(state, snap);
+  const safeTurn = Math.max(0, Math.min(turnIndex, snap.chosenSkillSequence.length - 1));
+  for (let i = 0; i < safeTurn; i++) {
+    if (sim.phase !== 'battle') break;
+    const skId = snap.chosenSkillSequence[i];
+    if (evaluateSkillPreview(sim, skId).usable) {
+      sim = playBattleTurn(sim, skId, { fastSim: true });
+    }
+  }
+
+  return PR_SKILLS.filter((s) => snap.unlockedSkillIdsAtStart.includes(s.id)).map((s) => {
+    const prev = evaluateSkillPreview(sim, s.id);
+    return {
+      skillId: s.id,
+      usable: prev.usable,
+      lockReasonKo: prev.lockReasonKo,
+      lockReasonEn: prev.lockReasonEn,
+    };
+  });
+}
+
 export function runWhatIfSingleTurn(
   state: GameState,
   stage: StageNumber,
@@ -442,41 +476,54 @@ export function buildContextualWhatIfPresets(
 
   const presets: { labelKo: string; labelEn: string; turnIdx: number; altSkillId: string }[] = [];
 
+  let simAtTurn = restoreStateFromStageSnapshot(state, snap);
+
   snap.chosenSkillSequence.forEach((skId, idx) => {
     const sk = PR_SKILLS_BY_ID[skId];
-    if (!sk) return;
+    if (sk && simAtTurn.phase === 'battle') {
+      let altId = 'B14_internal_factcheck';
+      if (skId === 'A05_dinner_drinks' || skId === 'A06_bomb_shot') {
+        altId = 'A07_press_statement';
+      } else if (sk.category === 'D') {
+        altId = snap.unlockedSkillIdsAtStart.includes('C23_emergency_press_conf')
+          ? 'C23_emergency_press_conf'
+          : 'E35_official_apology';
+      } else if (skId === 'A01_phone_call') {
+        altId = snap.unlockedSkillIdsAtStart.includes('C20_legal_team')
+          ? 'C20_legal_team'
+          : 'B14_internal_factcheck';
+      } else if (skId === 'B14_internal_factcheck') {
+        altId = 'A05_dinner_drinks';
+      } else if (sk.category === 'E') {
+        altId = snap.unlockedSkillIdsAtStart.includes('D27_ad_leverage')
+          ? 'D27_ad_leverage'
+          : 'A08_background_briefing';
+      } else {
+        altId = snap.unlockedSkillIdsAtStart.includes('E39_substantive_reform')
+          ? 'E39_substantive_reform'
+          : 'E35_official_apology';
+      }
 
-    let altId = 'B14_internal_factcheck';
-    if (skId === 'A05_dinner_drinks' || skId === 'A06_bomb_shot') {
-      altId = 'A07_press_statement';
-    } else if (sk.category === 'D') {
-      altId = snap.unlockedSkillIdsAtStart.includes('C23_emergency_press_conf')
-        ? 'C23_emergency_press_conf'
-        : 'E35_official_apology';
-    } else if (skId === 'A01_phone_call') {
-      altId = snap.unlockedSkillIdsAtStart.includes('C20_legal_team')
-        ? 'C20_legal_team'
-        : 'B14_internal_factcheck';
-    } else if (skId === 'B14_internal_factcheck') {
-      altId = 'A05_dinner_drinks';
-    } else if (sk.category === 'E') {
-      altId = snap.unlockedSkillIdsAtStart.includes('D27_ad_leverage')
-        ? 'D27_ad_leverage'
-        : 'A08_background_briefing';
-    } else {
-      altId = snap.unlockedSkillIdsAtStart.includes('E39_substantive_reform')
-        ? 'E39_substantive_reform'
-        : 'E35_official_apology';
+      if (!evaluateSkillPreview(simAtTurn, altId).usable) {
+        const fallbackUsable = snap.unlockedSkillIdsAtStart.find(
+          (cand) => cand !== skId && evaluateSkillPreview(simAtTurn, cand).usable
+        );
+        if (fallbackUsable) altId = fallbackUsable;
+      }
+
+      if (altId !== skId && evaluateSkillPreview(simAtTurn, altId).usable) {
+        const alt = PR_SKILLS_BY_ID[altId]!;
+        presets.push({
+          turnIdx: idx,
+          altSkillId: altId,
+          labelKo: `${idx + 1}턴: ‘${sk.nameKo}’ 대신 ‘${alt.nameKo}’을 선택했다면?`,
+          labelEn: `Turn ${idx + 1}: “${alt.nameEn}” instead of “${sk.nameEn}”?`,
+        });
+      }
     }
 
-    if (altId !== skId && snap.unlockedSkillIdsAtStart.includes(altId)) {
-      const alt = PR_SKILLS_BY_ID[altId]!;
-      presets.push({
-        turnIdx: idx,
-        altSkillId: altId,
-        labelKo: `${idx + 1}턴: ‘${sk.nameKo}’ 대신 ‘${alt.nameKo}’을 선택했다면?`,
-        labelEn: `Turn ${idx + 1}: “${alt.nameEn}” instead of “${sk.nameEn}”?`,
-      });
+    if (simAtTurn.phase === 'battle' && evaluateSkillPreview(simAtTurn, skId).usable) {
+      simAtTurn = playBattleTurn(simAtTurn, skId, { fastSim: true });
     }
   });
 

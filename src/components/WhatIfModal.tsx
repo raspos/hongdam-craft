@@ -4,6 +4,7 @@ import { ENDINGS } from '../data/endings';
 import { PR_SKILLS, PR_SKILLS_BY_ID } from '../data/skills';
 import {
   buildContextualWhatIfPresets,
+  getWhatIfSkillOptionsAtTurn,
   runWhatIfFullStrategy,
   runWhatIfSingleTurn,
   STRATEGY_POLICY_META,
@@ -38,6 +39,15 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
   const [mode, setMode] = useState<'single_turn' | 'full_strategy'>('single_turn');
   const [turnIndex, setTurnIndex] = useState<number>(0);
 
+  const safeTurnIndex = snap
+    ? Math.max(0, Math.min(turnIndex, Math.max(0, snap.chosenSkillSequence.length - 1)))
+    : 0;
+
+  const turnSkillOptions = useMemo(
+    () => getWhatIfSkillOptionsAtTurn(state, selectedStage, safeTurnIndex),
+    [state, selectedStage, safeTurnIndex]
+  );
+
   const unlockedForStage = useMemo(() => {
     if (!snap) return PR_SKILLS.slice(0, 10);
     return PR_SKILLS.filter((s) => snap.unlockedSkillIdsAtStart.includes(s.id));
@@ -49,6 +59,16 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
     return fallback;
   });
 
+  const effectiveAltSkillId = useMemo(() => {
+    const actualAtTurn = snap?.chosenSkillSequence[safeTurnIndex];
+    const matched = turnSkillOptions.find((o) => o.skillId === altSkillId && o.usable);
+    if (matched) return matched.skillId;
+    const altUsable =
+      turnSkillOptions.find((o) => o.usable && o.skillId !== actualAtTurn) ||
+      turnSkillOptions.find((o) => o.usable);
+    return altUsable?.skillId || altSkillId;
+  }, [turnSkillOptions, altSkillId, snap, safeTurnIndex]);
+
   const [altPolicy, setAltPolicy] = useState<StrategyPolicyId>('transparent_remedy');
 
   const presets = useMemo(
@@ -59,11 +79,10 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
   const result = useMemo(() => {
     if (!snap || snap.chosenSkillSequence.length === 0) return null;
     if (mode === 'single_turn') {
-      const safeTurn = Math.min(turnIndex, snap.chosenSkillSequence.length - 1);
-      return runWhatIfSingleTurn(state, selectedStage, safeTurn, altSkillId);
+      return runWhatIfSingleTurn(state, selectedStage, safeTurnIndex, effectiveAltSkillId);
     }
     return runWhatIfFullStrategy(state, selectedStage, altPolicy);
-  }, [state, selectedStage, mode, turnIndex, altSkillId, altPolicy, snap]);
+  }, [state, selectedStage, mode, safeTurnIndex, effectiveAltSkillId, altPolicy, snap]);
 
   const formatResolution = (
     res: string,
@@ -266,15 +285,21 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
                     {isEn ? '2. Alternative PR Skill' : '2. 대체할 홍보 스킬 선택'}
                   </label>
                   <select
-                    value={altSkillId}
+                    value={effectiveAltSkillId}
                     onChange={(e) => setAltSkillId(e.target.value)}
                     className="voxel-input w-full text-xs font-pixel"
                   >
-                    {unlockedForStage.map((sk) => (
-                      <option key={sk.id} value={sk.id}>
-                        #{String(sk.num).padStart(2, '0')} [{sk.category}] {isEn ? sk.nameEn : sk.nameKo}
-                      </option>
-                    ))}
+                    {unlockedForStage.map((sk) => {
+                      const opt = turnSkillOptions.find((o) => o.skillId === sk.id);
+                      const isUsable = opt ? opt.usable : true;
+                      const reason = isEn ? opt?.lockReasonEn : opt?.lockReasonKo;
+                      return (
+                        <option key={sk.id} value={sk.id} disabled={!isUsable}>
+                          #{String(sk.num).padStart(2, '0')} [{sk.category}] {isEn ? sk.nameEn : sk.nameKo}
+                          {!isUsable && reason ? ` (${reason})` : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>

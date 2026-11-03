@@ -20,7 +20,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
   const { isEn } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | 'ALL'>('A');
   const [focusedSkillId, setFocusedSkillId] = useState<string>('A01_phone_call');
-  const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
+  const [showUnlockedOnly, setShowUnlockedOnly] = useState(true);
 
   const previews = useMemo(() => {
     const map: Record<string, SkillExecutionPreview> = {};
@@ -56,7 +56,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
       onRequestLethalConfirm(skillId, prev);
       return;
     }
-    if (skillId === 'A01_phone_call' || skillId === 'C26_chairman_hotline') {
+    if (skillId === 'A01_phone_call' || skillId === 'C26_chairman_call') {
       sound.playPhoneRing();
     } else if (skillId === 'C23_emergency_press_conf') {
       sound.playCameraFlash();
@@ -154,7 +154,11 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
               onClick={() => {
                 sound.playBlip();
                 setSelectedCategory(cat);
-                const firstInCat = PR_SKILLS.find((s) => s.category === cat);
+                const firstInCat = PR_SKILLS.find(
+                  (s) =>
+                    s.category === cat &&
+                    (!showUnlockedOnly || state.unlockedSkillIds.includes(s.id) || s.minStage <= state.currentStage)
+                ) || PR_SKILLS.find((s) => s.category === cat);
                 if (firstInCat) setFocusedSkillId(firstInCat.id);
               }}
               className={`px-2.5 py-1.5 rounded text-[11px] font-pixel whitespace-nowrap border transition-all flex items-center gap-1 ${

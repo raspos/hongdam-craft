@@ -479,7 +479,7 @@ export function playBattleTurn(
   let gameOverId = checkImmediateGameOver();
 
   // Check Early Clear (Scoop Withdrawn!) before enemy attacks
-  const earlyCleared = !gameOverId && battle.pressure <= BALANCE.EARLY_CLEAR_PRESSURE;
+  let earlyCleared = !gameOverId && battle.pressure <= BALANCE.EARLY_CLEAR_PRESSURE;
 
   if (!gameOverId && !earlyCleared) {
     // 2. Sudden Event Roll
@@ -518,6 +518,7 @@ export function playBattleTurn(
       });
 
       gameOverId = checkImmediateGameOver();
+      earlyCleared = !gameOverId && battle.pressure <= BALANCE.EARLY_CLEAR_PRESSURE;
     }
   }
 

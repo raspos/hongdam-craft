@@ -27,6 +27,31 @@ interface BattleArenaCanvasProps {
   visualCue: SceneVisualCue;
 }
 
+function disposeAndClearGroup(group: THREE.Group) {
+  while (group.children.length > 0) {
+    const child = group.children[0];
+    child.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) {
+        const mesh = node as THREE.Mesh;
+        mesh.geometry?.dispose();
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mats.forEach((m) => {
+          if (!m) return;
+          if ('map' in m && m.map) (m.map as THREE.Texture).dispose();
+          m.dispose();
+        });
+      } else if ((node as THREE.Sprite).isSprite) {
+        const sprite = node as THREE.Sprite;
+        if (sprite.material) {
+          sprite.material.map?.dispose();
+          sprite.material.dispose();
+        }
+      }
+    });
+    group.remove(child);
+  }
+}
+
 export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
   phase,
   stage,
@@ -127,12 +152,19 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
       if (!container) return;
       const w = Math.max(100, container.clientWidth);
       const h = Math.max(100, container.clientHeight);
-      camera.aspect = w / h;
+      const aspect = w / h;
+      camera.aspect = aspect;
+      // Pull camera back on narrow mobile viewports so both actors + speech bubbles stay in frame
+      const narrowPullback = aspect < 1.45 ? (1.45 - Math.max(0.75, aspect)) * 5.2 : 0;
+      camera.position.set(0, 3.8 + narrowPullback * 0.14, 9.2 + narrowPullback);
+      camera.lookAt(0, 1.4, 0.2);
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     onResize();
     window.addEventListener('resize', onResize);
+    const resizeObs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
+    resizeObs?.observe(container);
 
     let rafId = 0;
     const t0 = performance.now();
@@ -151,7 +183,15 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
 
     return () => {
       window.removeEventListener('resize', onResize);
+      resizeObs?.disconnect();
       cancelAnimationFrame(rafId);
+      disposeAndClearGroup(envGroup);
+      disposeAndClearGroup(actorsGroup);
+      disposeAndClearGroup(propsGroup);
+      disposeAndClearGroup(speechGroup);
+      floor.geometry.dispose();
+      floorMat.dispose();
+      grid.geometry.dispose();
       renderer.dispose();
     };
   }, []);
@@ -162,7 +202,7 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
     const scene = sceneRef.current;
     if (!envGroup || !scene) return;
 
-    while (envGroup.children.length > 0) envGroup.remove(envGroup.children[0]);
+    disposeAndClearGroup(envGroup);
     const built = buildStageEnvironment(stage);
     envGroup.add(built.group);
     scene.background = new THREE.Color(built.skyColor);
@@ -175,7 +215,7 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
     const actorsGroup = actorsGroupRef.current;
     if (!actorsGroup) return;
 
-    while (actorsGroup.children.length > 0) actorsGroup.remove(actorsGroup.children[0]);
+    disposeAndClearGroup(actorsGroup);
 
     // 1. Left Side: PR Chief
     const playerActor = new VoxelActor(fromPlayerAppearance(playerAppearance), 1.12);
@@ -257,8 +297,8 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
     const speechGroup = speechGroupRef.current;
     if (!propsGroup || !speechGroup) return;
 
-    while (propsGroup.children.length > 0) propsGroup.remove(propsGroup.children[0]);
-    while (speechGroup.children.length > 0) speechGroup.remove(speechGroup.children[0]);
+    disposeAndClearGroup(propsGroup);
+    disposeAndClearGroup(speechGroup);
 
     const propScene = buildActionPropScene(visualCue.propType, isEn);
     propsGroup.add(propScene.group);
@@ -302,9 +342,8 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full relative rounded-xl overflow-hidden border-4 border-slate-950 shadow-[5px_5px_0_#000] bg-slate-950 cursor-grab active:cursor-grabbing"
+      className="w-full h-full relative rounded-xl overflow-hidden border-4 border-slate-950 shadow-[5px_5px_0_#000] bg-slate-950 cursor-grab active:cursor-grabbing touch-pan-y"
       onPointerDown={(e) => {
-        if (e.pointerType === 'touch') return;
         isDraggingRef.current = true;
         prevXRef.current = e.clientX;
       }}
@@ -318,6 +357,9 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
         prevXRef.current = e.clientX;
       }}
       onPointerUp={() => {
+        isDraggingRef.current = false;
+      }}
+      onPointerCancel={() => {
         isDraggingRef.current = false;
       }}
       onPointerLeave={() => {

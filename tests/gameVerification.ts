@@ -8,6 +8,7 @@ import {
   computeJournalistLabMetrics,
   computeSkillEfficiencyBubbles,
   computeStageCrisisProfiles,
+  getWhatIfSkillOptionsAtTurn,
   runMonteCarloSurvival,
   runWhatIfFullStrategy,
   runWhatIfSingleTurn,
@@ -335,6 +336,26 @@ export async function runAllVerifications() {
     const prof = computeStageCrisisProfiles(sc.id);
     assert(prof.length === 6 && prof.every((p) => Number.isFinite(p.estXpNeeded)), 'Data Lab Stage Profiles valid');
   });
+
+  // 8. Regression Checks: Bomb-Shot Hangover, Fact-Checked Synergy Preview, What-If Turn Usability
+  let regState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 444, forcedScale: 'large' }), 2);
+  regState.stageBattle!.journalists[0].archetype = 'networker';
+  regState = playBattleTurn(regState, 'A06_bomb_shot');
+  assert(Boolean(regState.stageBattle?.buffs.hangoverNextTurn), 'Bomb-shot must set hangoverNextTurn for next turn');
+  const nextCallPrev = evaluateSkillPreview(regState, 'A01_phone_call');
+  assert(nextCallPrev.effectiveHpCost === 10, `Hangover must add +5 HP cost to phone call (got ${nextCallPrev.effectiveHpCost})`);
+
+  let synState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 555, forcedScale: 'midsize' }), 1);
+  const rawPrevBefore = evaluateSkillPreview(synState, 'A10_extra_materials');
+  synState.stageBattle!.buffs.factChecked = true;
+  const rawPrevAfter = evaluateSkillPreview(synState, 'A10_extra_materials');
+  assert(
+    Math.abs(rawPrevAfter.expectedPressureDelta) > Math.abs(rawPrevBefore.expectedPressureDelta),
+    'Fact-Checked buff must amplify A10_extra_materials pressure preview'
+  );
+
+  const wiTurnOpts = getWhatIfSkillOptionsAtTurn(fullRun, 1, 0);
+  assert(wiTurnOpts.length > 0 && wiTurnOpts.some((o) => o.usable), 'What-If turn options must identify usable skills');
 
   console.log('  ✅ Counterfactual WHAT-IF, Monte Carlo N=1,000, and Data Lab calculators verified.');
   console.log(`\n🎉 ALL ${passed} ASSERTIONS PASSED (${failed} FAILED)!`);
