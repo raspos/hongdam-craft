@@ -110,51 +110,17 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
     onChangeProfile({ ...profile, companyName: chosen.name });
   };
 
-  const applyPersonaPreset = (preset: 'rookie' | 'veteran' | 'ace') => {
+  const applyTenurePreset = (years: number, suit?: string, hair?: PRAppearance['hairStyle']) => {
     sound.playBlip();
-    if (preset === 'rookie') {
-      onChangeProfile({
-        ...profile,
-        name: isEn ? 'J. Han' : '한열정',
-        experienceYears: 3,
-        appearance: {
-          ...profile.appearance,
-          skinTone: '#fce5d4',
-          hairStyle: 'neat',
-          suitColor: '#1e3a8a',
-          tieColor: '#2563eb',
-          glasses: false,
-        },
-      });
-    } else if (preset === 'veteran') {
-      onChangeProfile({
-        ...profile,
-        name: isEn ? 'M. Choi' : '최야근',
-        experienceYears: 11,
-        appearance: {
-          ...profile.appearance,
-          skinTone: '#f3cfb3',
-          hairStyle: 'short',
-          suitColor: '#374151',
-          tieColor: '#dc2626',
-          glasses: true,
-        },
-      });
-    } else {
-      onChangeProfile({
-        ...profile,
-        name: isEn ? 'S. Park' : '박수습',
-        experienceYears: 7,
-        appearance: {
-          ...profile.appearance,
-          skinTone: '#fce5d4',
-          hairStyle: 'bob',
-          suitColor: '#1e293b',
-          tieColor: '#d97706',
-          glasses: true,
-        },
-      });
-    }
+    onChangeProfile({
+      ...profile,
+      experienceYears: years,
+      appearance: {
+        ...profile.appearance,
+        ...(suit ? { suitColor: suit } : {}),
+        ...(hair ? { hairStyle: hair } : {}),
+      },
+    });
   };
 
   if (phase === 'company_assigned') {
@@ -319,44 +285,6 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
         </p>
       </div>
 
-      {/* Main Onboarding Card */}
-      <div className="pixel-card p-4 sm:p-5 space-y-4">
-      {/* One-Click Persona Presets (Mirrors Personnel Craft Stage 1 Quick Presets) */}
-      <div>
-        <div className="text-xs font-pixel text-slate-400 mb-2 flex items-center justify-between gap-1.5">
-          <span className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isEn ? 'Quick PR Persona Presets' : '홍보팀장 프리셋 선택 (원클릭)'}</span>
-          </span>
-          <span className="text-[11px] text-amber-300">
-            {isEn ? `${profile.name} (${profile.experienceYears}y)` : `${profile.name} (${profile.experienceYears}년차)`}
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => applyPersonaPreset('rookie')}
-            className="pixel-btn-mc py-2 px-2 rounded text-[11px] sm:text-xs text-center text-sky-300 font-pixel"
-          >
-            {isEn ? '🔥 Rookie Lead (3y)' : '🔥 신임 팀장형 (3년)'}
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPersonaPreset('ace')}
-            className="pixel-btn-mc py-2 px-2 rounded text-[11px] sm:text-xs text-center text-amber-300 font-pixel"
-          >
-            {isEn ? '🦅 Crisis Ace (7y)' : '🦅 전략 에이스 (7년)'}
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPersonaPreset('veteran')}
-            className="pixel-btn-mc py-2 px-2 rounded text-[11px] sm:text-xs text-center text-slate-200 font-pixel"
-          >
-            {isEn ? '☕ Overtime Vet (11y)' : '☕ 야근 베테랑 (11년)'}
-          </button>
-        </div>
-      </div>
-
       {/* Incoming Same-Seed Friend Challenge Banner */}
       {incomingChallenge && onAcceptChallenge && (
         <div className="bg-amber-950/80 border-2 border-amber-400 rounded-lg p-3.5 space-y-2.5 shadow-lg">
@@ -402,7 +330,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
         </div>
       )}
 
-      {/* Primary Character Profile & Company Selection Form (Always Visible!) */}
+      {/* Main Character Profile & Company Selection Card */}
       <div className="pixel-card p-4 sm:p-5 space-y-4 border-amber-500/60 bg-slate-950/80">
         <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">
           <div className="font-pixel text-sm sm:text-base text-amber-300 font-bold flex items-center gap-2">
@@ -513,11 +441,11 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
           </div>
         </div>
 
-        {/* 2. PR Experience Years Slider & Modifier Badges */}
-        <div className="pixel-slot p-3 space-y-1.5 text-xs">
+        {/* 2. PR Experience Years Slider & Quick Tenure Presets */}
+        <div className="pixel-slot p-3 space-y-2 text-xs">
           <div className="flex items-center justify-between font-pixel">
             <span className="text-slate-200">
-              {isEn ? 'PR Career Experience (Tenure)' : '홍보 경력 (연차)'}
+              {isEn ? 'PR Career Experience (Tenure)' : '홍보 경력 (연차 선택)'}
             </span>
             <span className="text-amber-300 font-bold text-sm">
               {isEn
@@ -525,6 +453,32 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
                 : `${profile.experienceYears}년차 홍보팀장`}
             </span>
           </div>
+
+          {/* Quick Tenure Presets (mirrors Personnel Craft while keeping custom name/company intact!) */}
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { yrs: 3, labelKo: '🔥 3년차 (신임 팀장)', labelEn: '🔥 3y Rookie Lead', suit: '#1e3a8a', hair: 'neat' as const },
+              { yrs: 7, labelKo: '🦅 7년차 (전략 에이스)', labelEn: '🦅 7y Crisis Ace', suit: '#1e293b', hair: 'bob' as const },
+              { yrs: 11, labelKo: '☕ 11년차 (야근 베테랑)', labelEn: '☕ 11y Overtime Vet', suit: '#374151', hair: 'short' as const },
+            ].map((p) => {
+              const active = profile.experienceYears === p.yrs;
+              return (
+                <button
+                  key={p.yrs}
+                  type="button"
+                  onClick={() => applyTenurePreset(p.yrs, p.suit, p.hair)}
+                  className={`py-1.5 px-2 rounded text-[11px] font-pixel border transition-all ${
+                    active
+                      ? 'bg-amber-600 text-white font-bold border-amber-300 shadow-sm'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:border-slate-600'
+                  }`}
+                >
+                  {isEn ? p.labelEn : p.labelKo}
+                </button>
+              );
+            })}
+          </div>
+
           <input
             type="range"
             min={1}
@@ -739,7 +693,6 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
               : '게임 시작 전 [홍담 데이터랩 — 기사 막기의 통계학] 먼저 둘러보기'}
           </span>
         </button>
-      </div>
       </div>
     </div>
   );
