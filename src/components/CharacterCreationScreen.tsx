@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   BarChart3,
   Building2,
-  ChevronDown,
-  ChevronUp,
-  Clock,
   Dices,
   Flame,
   Play,
   Save,
   ShieldAlert,
-  SlidersHorizontal,
   Sparkles,
   User,
   Zap,
@@ -59,6 +55,27 @@ const HAIR_STYLES: { id: PRAppearance['hairStyle']; ko: string; en: string }[] =
   { id: 'bob', ko: '칼단발', en: 'Sharp Bob' },
 ];
 
+const RANDOM_PR_NAMES = [
+  '김홍담',
+  '최마감',
+  '박해명',
+  '이정정',
+  '강반론',
+  '안수습',
+  '정위기',
+  '한특종',
+  '오대응',
+];
+
+const QUICK_COMPANY_PRESETS = [
+  { name: '한빛테크놀로지', tagKo: 'IT·AI', tagEn: 'IT & AI' },
+  { name: '미래바이오', tagKo: '제약·바이오', tagEn: 'Bio' },
+  { name: '네오엔터테인먼트', tagKo: '엔터·미디어', tagEn: 'Media' },
+  { name: '대산물산', tagKo: '소비재·유통', tagEn: 'Retail' },
+  { name: '코리아모빌리티', tagKo: '완성차·제조', tagEn: 'Auto' },
+  { name: '태양건설', tagKo: '건설·금융', tagEn: 'Build' },
+];
+
 export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
   phase,
   profile,
@@ -76,9 +93,22 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
   onOpenSimulator,
 }) => {
   const { isEn } = useLanguage();
-  const [showCustomSetup, setShowCustomSetup] = useState(false);
   const expMod = getExperienceModifiers(profile.experienceYears);
   const resemblesReal = checkResemblesRealCompany(profile.companyName);
+
+  const rollRandomName = () => {
+    sound.playBlip();
+    const filtered = RANDOM_PR_NAMES.filter((n) => n !== profile.name);
+    const chosen = filtered[Math.floor(Math.random() * filtered.length)] || '김홍담';
+    onChangeProfile({ ...profile, name: chosen });
+  };
+
+  const rollRandomCompany = () => {
+    sound.playBlip();
+    const filtered = QUICK_COMPANY_PRESETS.filter((c) => c.name !== profile.companyName);
+    const chosen = filtered[Math.floor(Math.random() * filtered.length)] || QUICK_COMPANY_PRESETS[0];
+    onChangeProfile({ ...profile, companyName: chosen.name });
+  };
 
   const applyPersonaPreset = (preset: 'rookie' | 'veteran' | 'ace') => {
     sound.playBlip();
@@ -372,18 +402,282 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
         </div>
       )}
 
-      {/* PRIMARY 1-CLICK QUICK START HERO BOX (15-second onboarding!) */}
-      <div className="bg-slate-900/95 border-2 border-emerald-500/80 rounded-lg p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] font-pixel">
-          <span className="text-emerald-300 font-bold">
-            ⚡ {isEn ? 'INSTANT PLAY · ZERO SETUP NEEDED' : '복잡한 설정 없이 3초 만에 첫 단독기사 막아보기'}
-          </span>
-          <span className="text-slate-400 flex items-center gap-1">
-            <Clock className="w-3 h-3 text-amber-400" />
-            {isEn ? '~1 min / stage' : '스테이지당 약 1분'}
+      {/* Primary Character Profile & Company Selection Form (Always Visible!) */}
+      <div className="pixel-card p-4 sm:p-5 space-y-4 border-amber-500/60 bg-slate-950/80">
+        <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">
+          <div className="font-pixel text-sm sm:text-base text-amber-300 font-bold flex items-center gap-2">
+            <User className="w-4 h-4 text-sky-400" />
+            <span>{isEn ? 'PR Chief & Target Company Setup' : '홍보팀장 신상 & 소속 회사 선택'}</span>
+          </div>
+          <span className="text-[11px] font-pixel text-slate-400">
+            {isEn ? 'Step 1 of 2' : '1단계 · 기본 설정'}
           </span>
         </div>
 
+        {/* 1. Name & Company Name Inputs with Random Dice */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+          <div>
+            <div className="flex items-center justify-between mb-1.5 font-pixel">
+              <label className="text-slate-300 flex items-center gap-1">
+                <User className="w-3.5 h-3.5 text-sky-400" />
+                <span className="font-bold">{isEn ? 'PR Chief Name' : '홍보팀장 이름·닉네임'}</span>
+              </label>
+              <button
+                type="button"
+                onClick={rollRandomName}
+                className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-0.5"
+                title={isEn ? 'Randomize Name' : '이름 랜덤 뽑기'}
+              >
+                <Dices className="w-3 h-3" />
+                <span>{isEn ? 'Random' : '랜덤'}</span>
+              </button>
+            </div>
+            <input
+              type="text"
+              maxLength={16}
+              value={profile.name}
+              onChange={(e) => onChangeProfile({ ...profile, name: e.target.value })}
+              placeholder={isEn ? 'e.g., Alex Kim' : '예: 김홍담'}
+              className="voxel-input w-full text-sm font-pixel font-bold"
+            />
+            <div className="text-[10px] text-slate-500 mt-1 font-pixel">
+              {isEn ? 'Unified Rank: PR Team Lead' : '직급 통일: 기업 홍보팀장'}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5 font-pixel">
+              <label className="text-slate-300 flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-bold">{isEn ? 'Company Name' : '소속 회사명 입력 / 선택'}</span>
+              </label>
+              <button
+                type="button"
+                onClick={rollRandomCompany}
+                className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-0.5"
+                title={isEn ? 'Randomize Company' : '회사명 랜덤 뽑기'}
+              >
+                <Dices className="w-3 h-3" />
+                <span>{isEn ? 'Random' : '랜덤'}</span>
+              </button>
+            </div>
+            <input
+              type="text"
+              maxLength={20}
+              value={profile.companyName}
+              onChange={(e) => onChangeProfile({ ...profile, companyName: e.target.value })}
+              placeholder={isEn ? 'e.g., Hanbit Tech' : '예: 한빛테크놀로지'}
+              className="voxel-input w-full text-sm font-pixel font-bold text-amber-300"
+            />
+            <div className="text-[10px] text-slate-400 mt-1">
+              {resemblesReal
+                ? isEn
+                  ? '⚠️ Fictional Scenario: Unrelated to any real-world company.'
+                  : '⚠️ 가상 설정 안내: 입력 사명은 게임 속 가상 기업으로 작동하며 실제 기업과 무관합니다.'
+                : isEn
+                  ? '* Scale & beat will be randomly assigned.'
+                  : '* 기업 규모(스타트업~재벌)와 세부 업종은 무작위 배정됩니다.'}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Company Preset Chips (1-Click Fill) */}
+        <div>
+          <div className="text-[11px] font-pixel text-slate-400 mb-1.5">
+            {isEn ? 'Quick Company Presets (Click to select):' : '추천 가상 회사 (클릭 시 자동 입력):'}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_COMPANY_PRESETS.map((c) => {
+              const active = profile.companyName === c.name;
+              return (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    onChangeProfile({ ...profile, companyName: c.name });
+                  }}
+                  className={`px-2.5 py-1 rounded text-xs font-pixel transition-all border ${
+                    active
+                      ? 'bg-amber-500 text-slate-950 font-bold border-amber-300 shadow-[1px_1px_0_#000]'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600 hover:text-white'
+                  }`}
+                >
+                  <span>{c.name}</span>
+                  <span className={`ml-1 text-[10px] ${active ? 'text-slate-950 font-bold' : 'text-slate-400'}`}>
+                    ({isEn ? c.tagEn : c.tagKo})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. PR Experience Years Slider & Modifier Badges */}
+        <div className="pixel-slot p-3 space-y-1.5 text-xs">
+          <div className="flex items-center justify-between font-pixel">
+            <span className="text-slate-200">
+              {isEn ? 'PR Career Experience (Tenure)' : '홍보 경력 (연차)'}
+            </span>
+            <span className="text-amber-300 font-bold text-sm">
+              {isEn
+                ? `Year ${profile.experienceYears} · PR Team Lead`
+                : `${profile.experienceYears}년차 홍보팀장`}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={20}
+            value={profile.experienceYears}
+            onChange={(e) =>
+              onChangeProfile({ ...profile, experienceYears: parseInt(e.target.value, 10) || 1 })
+            }
+            className="w-full accent-amber-500 cursor-pointer"
+          />
+          <div className="flex flex-wrap justify-between text-[11px] text-slate-400 gap-1 font-pixel">
+            <span>
+              {isEn
+                ? `Skill Proficiency: +${Math.round(expMod.skillProficiencyBonus * 100)}%`
+                : `스킬 숙련 보너스: +${Math.round(expMod.skillProficiencyBonus * 100)}%`}
+            </span>
+            <span>
+              {isEn
+                ? `Initial Reporter Trust: +${expMod.initialTrustBonus}`
+                : `기자 초기 친밀도: +${expMod.initialTrustBonus}`}
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Character Voxel Appearance (Hair / Suit / Tie / Glasses) */}
+        <div className="pixel-slot p-3 space-y-2.5 text-xs">
+          <div className="font-pixel text-slate-200">
+            {isEn ? '3D Voxel Appearance' : '3D 복셀 캐릭터 외형 선택'}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-[11px] text-slate-400 block mb-1">
+                {isEn ? 'Hairstyle' : '헤어스타일'}
+              </span>
+              <div className="grid grid-cols-2 gap-1">
+                {HAIR_STYLES.map((hs) => (
+                  <button
+                    key={hs.id}
+                    type="button"
+                    onClick={() => {
+                      sound.playBlip();
+                      onChangeProfile({
+                        ...profile,
+                        appearance: { ...profile.appearance, hairStyle: hs.id },
+                      });
+                    }}
+                    className={`py-1 px-1.5 rounded text-[11px] font-pixel border ${
+                      profile.appearance.hairStyle === hs.id
+                        ? 'bg-amber-600 text-white border-amber-300 font-bold'
+                        : 'bg-slate-900 text-slate-400 border-slate-800'
+                    }`}
+                  >
+                    {isEn ? hs.en : hs.ko}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] text-slate-400 block mb-1">
+                {isEn ? 'Suit Style' : '수트 색상'}
+              </span>
+              <div className="grid grid-cols-2 gap-1">
+                {SUIT_COLORS.map((sc) => (
+                  <button
+                    key={sc.hex}
+                    type="button"
+                    onClick={() => {
+                      sound.playBlip();
+                      onChangeProfile({
+                        ...profile,
+                        appearance: { ...profile.appearance, suitColor: sc.hex },
+                      });
+                    }}
+                    className={`py-1 px-1.5 rounded text-[11px] font-pixel border flex items-center gap-1 ${
+                      profile.appearance.suitColor === sc.hex
+                        ? 'bg-sky-700 text-white border-sky-300 font-bold'
+                        : 'bg-slate-900 text-slate-400 border-slate-800'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: sc.hex }} />
+                    <span className="truncate">{isEn ? sc.en : sc.ko}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">{isEn ? 'Skin:' : '피부톤:'}</span>
+              {SKIN_TONES.map((tone) => (
+                <button
+                  key={tone}
+                  type="button"
+                  onClick={() =>
+                    onChangeProfile({
+                      ...profile,
+                      appearance: { ...profile.appearance, skinTone: tone },
+                    })
+                  }
+                  className={`w-5 h-5 rounded border-2 ${
+                    profile.appearance.skinTone === tone ? 'border-amber-300 scale-110' : 'border-slate-700'
+                  }`}
+                  style={{ backgroundColor: tone }}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">{isEn ? 'Tie:' : '넥타이:'}</span>
+              {TIE_COLORS.map((tc) => (
+                <button
+                  key={tc}
+                  type="button"
+                  onClick={() =>
+                    onChangeProfile({
+                      ...profile,
+                      appearance: { ...profile.appearance, tieColor: tc },
+                    })
+                  }
+                  className={`w-5 h-5 rounded border-2 ${
+                    profile.appearance.tieColor === tc ? 'border-white scale-110' : 'border-slate-700'
+                  }`}
+                  style={{ backgroundColor: tc }}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                sound.playBlip();
+                onChangeProfile({
+                  ...profile,
+                  appearance: { ...profile.appearance, glasses: !profile.appearance.glasses },
+                });
+              }}
+              className={`px-2.5 py-1 rounded text-[11px] font-pixel border ${
+                profile.appearance.glasses
+                  ? 'bg-emerald-700 text-white border-emerald-300 font-bold'
+                  : 'bg-slate-900 text-slate-400 border-slate-700'
+              }`}
+            >
+              👓 {isEn ? (profile.appearance.glasses ? 'Glasses ON' : 'Glasses OFF') : profile.appearance.glasses ? '안경 착용' : '안경 미착용'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* START ACTIONS: Immediate Launch or Corporate Specs Preview */}
+      <div className="space-y-2.5 pt-1">
         <button
           type="button"
           onClick={() => {
@@ -394,264 +688,39 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
         >
           <Play className="w-4 h-4 fill-current" />
           <span>
-            {isEn ? 'Become PR Chief Now (Instant Start)' : '지금 바로 홍보팀장 되기 (즉시 시작)'}
+            {isEn
+              ? `Launch Crisis Defense as ${profile.name} at ${profile.companyName}!`
+              : `[${profile.companyName}] ${profile.name} 홍보팀장으로 즉시 출격!`}
           </span>
         </button>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-pixel pt-0.5">
-          <span className="flex items-center gap-1 text-slate-300">
-            <Save className="w-3 h-3 text-sky-400" />
-            {isEn
-              ? 'Auto-saved every turn · Resume anytime'
-              : '매 턴 자동 저장 · 1단계만 끝내도 결과 공유 가능'}
-          </span>
-          <span className="text-amber-300/90">
-            {isEn
-              ? `Default: ${profile.name} (${profile.experienceYears}y)`
-              : `기본 설정: ${profile.name} (${profile.experienceYears}년차)`}
-          </span>
-        </div>
-      </div>
-
-      {/* Collapsible Optional Detailed Character & Company Setup */}
-      <div className="border border-slate-800 rounded-lg bg-slate-950/70 overflow-hidden">
         <button
           type="button"
           onClick={() => {
-            sound.playBlip();
-            setShowCustomSetup((v) => !v);
+            sound.playClick();
+            onAssignCompany();
           }}
-          className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-pixel text-slate-300 hover:text-white hover:bg-slate-900/80 transition-colors"
+          className="pixel-btn-mc pixel-btn-mc-gold w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2"
         >
-          <span className="flex items-center gap-1.5">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-            <span>
-              {isEn
-                ? 'Optional: Customize Name, Company, Career & 3D Avatar'
-                : '선택 사항: 이름·회사명·연차·3D 캐릭터 직접 꾸미기'}
-            </span>
+          <ShieldAlert className="w-4 h-4" />
+          <span>
+            {isEn
+              ? 'Preview Assigned Corporate Specs (Scale & C-Suite) First →'
+              : '가상 기업 세부 배정(규모·경영진 특성) 먼저 확인 후 출격 →'}
           </span>
-          {showCustomSetup ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
         </button>
 
-        {showCustomSetup && (
-          <div className="p-3.5 pt-2 space-y-3.5 border-t border-slate-800/90">
-            {/* 1. Name & Company Name */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="block font-pixel text-slate-300 mb-1 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-sky-400" />
-                  <span>{isEn ? 'PR Chief Name / Nickname' : '홍보팀장 이름·닉네임'}</span>
-                </label>
-                <input
-                  type="text"
-                  maxLength={16}
-                  value={profile.name}
-                  onChange={(e) => onChangeProfile({ ...profile, name: e.target.value })}
-                  placeholder={isEn ? 'e.g., Alex Kim' : '예: 김홍담'}
-                  className="voxel-input w-full text-xs font-pixel"
-                />
-                <div className="text-[10px] text-slate-500 mt-1 font-pixel">
-                  {isEn ? 'Unified Rank: PR Team Lead' : '직급 통일: 홍보팀장'}
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-pixel text-slate-300 mb-1 flex items-center gap-1">
-                  <Building2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{isEn ? 'Virtual Company Name' : '회사명 입력'}</span>
-                </label>
-                <input
-                  type="text"
-                  maxLength={20}
-                  value={profile.companyName}
-                  onChange={(e) => onChangeProfile({ ...profile, companyName: e.target.value })}
-                  placeholder={isEn ? 'e.g., Hanbit Tech' : '예: 한빛테크놀로지'}
-                  className="voxel-input w-full text-xs font-pixel"
-                />
-                <div className="text-[10px] text-amber-400/90 mt-1">
-                  {resemblesReal
-                    ? isEn
-                      ? '⚠️ Fictional Scenario Notice: Unrelated to any real-world company of similar name.'
-                      : '⚠️ 가상 설정 안내: 입력 사명은 게임 속 무작위 가상 기업으로만 작동하며 실제 기업과 무관합니다.'
-                    : isEn
-                      ? '* Scale & industry will be randomly assigned.'
-                      : '* 기업 규모(스타트업~재벌)와 업종은 무작위 배정됩니다.'}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. PR Experience Years */}
-            <div className="pixel-slot p-3 space-y-1.5 text-xs">
-              <div className="flex items-center justify-between font-pixel">
-                <span className="text-slate-200">
-                  {isEn ? 'PR Career Experience (Years)' : '홍보 경력 (연차)'}
-                </span>
-                <span className="text-amber-300 font-bold text-sm">
-                  {isEn ? `Year ${profile.experienceYears} · PR Team Lead` : `${profile.experienceYears}년차 홍보팀장`}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={20}
-                value={profile.experienceYears}
-                onChange={(e) =>
-                  onChangeProfile({ ...profile, experienceYears: parseInt(e.target.value, 10) || 1 })
-                }
-                className="w-full accent-amber-500 cursor-pointer"
-              />
-              <div className="flex flex-wrap justify-between text-[11px] text-slate-400 gap-1">
-                <span>
-                  {isEn
-                    ? `Skill Proficiency: +${Math.round(expMod.skillProficiencyBonus * 100)}%`
-                    : `스킬 숙련 보너스: +${Math.round(expMod.skillProficiencyBonus * 100)}%`}
-                </span>
-                <span>
-                  {isEn
-                    ? `Initial Reporter Trust: +${expMod.initialTrustBonus}`
-                    : `기자 초기 친밀도: +${expMod.initialTrustBonus}`}
-                </span>
-              </div>
-            </div>
-
-            {/* 3. Character Voxel Appearance */}
-            <div className="pixel-slot p-3 space-y-2.5 text-xs">
-              <div className="font-pixel text-slate-200">{isEn ? '3D Voxel Appearance' : '3D 복셀 캐릭터 외형 선택'}</div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[11px] text-slate-400 block mb-1">{isEn ? 'Hairstyle' : '헤어스타일'}</span>
-                  <div className="grid grid-cols-2 gap-1">
-                    {HAIR_STYLES.map((hs) => (
-                      <button
-                        key={hs.id}
-                        type="button"
-                        onClick={() => {
-                          sound.playBlip();
-                          onChangeProfile({
-                            ...profile,
-                            appearance: { ...profile.appearance, hairStyle: hs.id },
-                          });
-                        }}
-                        className={`py-1 px-1.5 rounded text-[11px] font-pixel border ${
-                          profile.appearance.hairStyle === hs.id
-                            ? 'bg-amber-600 text-white border-amber-300'
-                            : 'bg-slate-900 text-slate-400 border-slate-800'
-                        }`}
-                      >
-                        {isEn ? hs.en : hs.ko}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] text-slate-400 block mb-1">{isEn ? 'Suit Style' : '수트 색상'}</span>
-                  <div className="grid grid-cols-2 gap-1">
-                    {SUIT_COLORS.map((sc) => (
-                      <button
-                        key={sc.hex}
-                        type="button"
-                        onClick={() => {
-                          sound.playBlip();
-                          onChangeProfile({
-                            ...profile,
-                            appearance: { ...profile.appearance, suitColor: sc.hex },
-                          });
-                        }}
-                        className={`py-1 px-1.5 rounded text-[11px] font-pixel border flex items-center gap-1 ${
-                          profile.appearance.suitColor === sc.hex
-                            ? 'bg-sky-700 text-white border-sky-300'
-                            : 'bg-slate-900 text-slate-400 border-slate-800'
-                        }`}
-                      >
-                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: sc.hex }} />
-                        <span className="truncate">{isEn ? sc.en : sc.ko}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">{isEn ? 'Skin:' : '피부톤:'}</span>
-                  {SKIN_TONES.map((tone) => (
-                    <button
-                      key={tone}
-                      type="button"
-                      onClick={() =>
-                        onChangeProfile({
-                          ...profile,
-                          appearance: { ...profile.appearance, skinTone: tone },
-                        })
-                      }
-                      className={`w-5 h-5 rounded border-2 ${
-                        profile.appearance.skinTone === tone ? 'border-amber-300 scale-110' : 'border-slate-700'
-                      }`}
-                      style={{ backgroundColor: tone }}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">{isEn ? 'Tie:' : '넥타이:'}</span>
-                  {TIE_COLORS.map((tc) => (
-                    <button
-                      key={tc}
-                      type="button"
-                      onClick={() =>
-                        onChangeProfile({
-                          ...profile,
-                          appearance: { ...profile.appearance, tieColor: tc },
-                        })
-                      }
-                      className={`w-5 h-5 rounded border-2 ${
-                        profile.appearance.tieColor === tc ? 'border-white scale-110' : 'border-slate-700'
-                      }`}
-                      style={{ backgroundColor: tc }}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playBlip();
-                    onChangeProfile({
-                      ...profile,
-                      appearance: { ...profile.appearance, glasses: !profile.appearance.glasses },
-                    });
-                  }}
-                  className={`px-2.5 py-1 rounded text-[11px] font-pixel border ${
-                    profile.appearance.glasses
-                      ? 'bg-emerald-700 text-white border-emerald-300'
-                      : 'bg-slate-900 text-slate-400 border-slate-700'
-                  }`}
-                >
-                  👓 {isEn ? (profile.appearance.glasses ? 'Glasses ON' : 'Glasses OFF') : profile.appearance.glasses ? '안경 착용' : '안경 미착용'}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                sound.playClick();
-                onAssignCompany();
-              }}
-              className="pixel-btn-mc pixel-btn-mc-gold w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              <span>{isEn ? 'Confirm Custom Profile & Preview Assigned Company →' : '커스텀 정보로 가상 기업 배정 결과 확인 후 시작 →'}</span>
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-pixel px-1">
+          <span className="flex items-center gap-1 text-slate-300">
+            <Save className="w-3 h-3 text-sky-400" />
+            {isEn ? 'Auto-saved every turn · Resume anytime' : '매 턴 자동 저장 · 1단계만 끝내도 공유 가능'}
+          </span>
+          <span className="text-amber-300/90">
+            {isEn
+              ? `Active: ${profile.name} (${profile.experienceYears}y)`
+              : `현재 설정: ${profile.name} (${profile.experienceYears}년차)`}
+          </span>
+        </div>
       </div>
 
       {/* Data Lab Secondary Entry */}
