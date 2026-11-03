@@ -1,5 +1,7 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
+import { COMPANY_SCALES, INDUSTRIES } from './data/companies';
 import { ENDINGS } from './data/endings';
+import { MAX_COMPANY_REROLLS } from './engine/balanceConfig';
 import {
   initializeNewRun,
   playBattleTurn,
@@ -7,7 +9,9 @@ import {
   startStageBattle,
   triggerVoluntaryResignation,
 } from './engine/gameEngine';
-import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
+import { STAGE_RESOLUTION_META } from './engine/progressionEngine';
+import { useLanguage } from './i18n/LanguageContext';
+import { LanguageProvider } from './i18n/LanguageProvider';
 import {
   clearSavedGameState,
   getFinishedRunCount,
@@ -16,6 +20,12 @@ import {
   saveGameState,
 } from './storage/storage';
 import { GameState, PRPlayerProfile, SkillExecutionPreview, StageNumber } from './types/game';
+import {
+  clearChallengeParamsFromUrl,
+  IncomingChallengeParams,
+  parseChallengeFromUrl,
+} from './utils/challengeShare';
+import { trackFunnelStep } from './utils/funnelTracker';
 import { BambooGroveModal } from './components/BambooGroveModal';
 import { BattleHUD } from './components/BattleHUD';
 import { BattleLogPanel } from './components/BattleLogPanel';
@@ -60,9 +70,19 @@ const HongdamAppInner: React.FC = () => {
   } | null>(null);
 
   const [finishedCount, setFinishedCount] = useState<number>(() => getFinishedRunCount());
+  const [rerollsLeft, setRerollsLeft] = useState<number>(MAX_COMPANY_REROLLS);
+  const [showSetup3D, setShowSetup3D] = useState<boolean>(false);
+  const [incomingChallenge, setIncomingChallenge] = useState<IncomingChallengeParams | null>(() =>
+    parseChallengeFromUrl()
+  );
   const recordedEndingPlayIdRef = useRef<string | null>(
     gameState.phase === 'ending' ? gameState.playId : null
   );
+
+  // Track initial page visit in conversion funnel once per session
+  useEffect(() => {
+    trackFunnelStep('visit');
+  }, []);
 
   // Persist every gameState change automatically to localStorage
   useEffect(() => {
@@ -74,6 +94,7 @@ const HongdamAppInner: React.FC = () => {
     if (gameState.phase === 'ending' && recordedEndingPlayIdRef.current !== gameState.playId) {
       recordedEndingPlayIdRef.current = gameState.playId;
       setFinishedCount(recordFinishedRunCount());
+      trackFunnelStep('ending', gameState.playId);
     }
   }, [gameState.phase, gameState.playId]);
 
@@ -99,20 +120,74 @@ const HongdamAppInner: React.FC = () => {
   };
 
   const handleAssignCompany = () => {
+    setRerollsLeft(MAX_COMPANY_REROLLS);
     setGameState((prev) => initializeNewRun(prev.player));
   };
 
   const handleRerollCompany = () => {
+    if (rerollsLeft <= 0) return;
+    setRerollsLeft((r) => Math.max(0, r - 1));
     setGameState((prev) => initializeNewRun(prev.player));
   };
 
   const handleStartStage1 = () => {
-    setGameState((prev) => startStageBattle(prev, 1));
+    setGameState((prev) => {
+      const next = startStageBattle(prev, 1);
+      trackFunnelStep('start', next.playId);
+      return next;
+    });
+  };
+
+  // 1-Click Quick Start: immediately assigns random scenario and enters Stage 1 battle
+  const handleQuickStart = () => {
+    setGameState((prev) => {
+      const assigned = initializeNewRun(prev.player);
+      const battleState = startStageBattle(assigned, 1);
+      trackFunnelStep('start', battleState.playId);
+      return battleState;
+    });
+    handleSwitchView('game');
+  };
+
+  // Accept incoming Same-Seed Friend Challenge URL
+  const handleAcceptChallenge = () => {
+    if (!incomingChallenge) return;
+    const ch = incomingChallenge;
+    setGameState((prev) => {
+      const challengeProfile: PRPlayerProfile = {
+        ...prev.player,
+        experienceYears: ch.expYears ?? prev.player.experienceYears,
+      };
+      const assigned = initializeNewRun(challengeProfile, {
+        seed: ch.seed,
+        forcedScale: ch.scale,
+        forcedIndustry: ch.industry,
+      });
+      const battleState = startStageBattle(assigned, 1);
+      trackFunnelStep('start', battleState.playId);
+      return battleState;
+    });
+    clearChallengeParamsFromUrl();
+    setIncomingChallenge(null);
+    handleSwitchView('game');
+  };
+
+  const handleDismissChallenge = () => {
+    clearChallengeParamsFromUrl();
+    setIncomingChallenge(null);
   };
 
   const executeSkillConfirmed = (skillId: string) => {
     setGameState((prev) => {
       const next = playBattleTurn(prev, skillId);
+      if (
+        prev.phase === 'battle' &&
+        next.phase === 'stage_result' &&
+        next.lastStageSummary?.stage === 1 &&
+        STAGE_RESOLUTION_META[next.lastStageSummary.resolution]?.isSuccess
+      ) {
+        trackFunnelStep('stage1_clear', next.playId);
+      }
       if (prev.phase !== 'ending' && next.phase === 'ending' && next.endingSummary) {
         const endDef = ENDINGS[next.endingSummary.endingId];
         next.visualCue = {
@@ -144,6 +219,7 @@ const HongdamAppInner: React.FC = () => {
 
   const handleRestartGame = () => {
     const fresh = clearSavedGameState();
+    setRerollsLeft(MAX_COMPANY_REROLLS);
     setGameState((prev) => ({
       ...fresh,
       player: prev.player,
@@ -159,11 +235,16 @@ const HongdamAppInner: React.FC = () => {
       ? '“[Exclusive] Breaking Scoop Incoming…”'
       : '“[단독] 취재 질문지가 곧 도착합니다…”';
 
+  const scaleMeta = COMPANY_SCALES[gameState.company.scale];
+  const indMeta = INDUSTRIES[gameState.company.industry];
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#090d16] text-slate-100">
-      {/* Unified CRAFT UNIVERSE Navigation */}
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-red-600 selection:text-white">
+      {/* Unified Header Navigation (Personnel Craft Design Consistency) */}
       <CraftUniverseNavbar
         activeView={activeView}
+        currentPhase={gameState.phase}
+        currentStage={gameState.currentStage}
         onChangeView={handleSwitchView}
         onOpenBamboo={() => setShowBamboo(true)}
         onOpenMethodology={() => setShowMethodology(true)}
@@ -172,6 +253,35 @@ const HongdamAppInner: React.FC = () => {
       />
 
       {/* Main Content Area */}
+      {incomingChallenge &&
+        gameState.phase !== 'character_create' &&
+        gameState.phase !== 'company_assigned' && (
+          <div className="bg-rose-950/90 border-b border-rose-500/80 px-4 py-2.5">
+            <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-2 text-xs font-pixel">
+              <span className="text-rose-100">
+                🔥{' '}
+                {isEn
+                  ? `Same-Seed Crisis Challenge arrived (Seed #${incomingChallenge.seed})! Start this exact scenario?`
+                  : `${incomingChallenge.challengerName ? `${incomingChallenge.challengerName}님의 ` : ''}동일 조건 위기대응 도전장(시드 #${incomingChallenge.seed})이 도착했습니다!`}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAcceptChallenge}
+                  className="pixel-btn-mc pixel-btn-mc-gold px-3 py-1 text-xs font-bold"
+                >
+                  {isEn ? 'Accept Challenge Now' : '이 도전장으로 즉시 새 게임 시작'}
+                </button>
+                <button
+                  onClick={handleDismissChallenge}
+                  className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-[11px]"
+                >
+                  {isEn ? 'Keep Current Save' : '현재 진행 유지'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       {activeView === 'datalab' ? (
         <main className="flex-1">
           <HongdamDataLabView
@@ -180,32 +290,148 @@ const HongdamAppInner: React.FC = () => {
           />
         </main>
       ) : (
-        <main className="flex-1 max-w-[1440px] w-full mx-auto px-3 sm:px-6 py-4">
+        <main className="flex-1 max-w-[1440px] w-full mx-auto p-3 sm:p-5 lg:p-6">
           {/* SETUP PHASES: Character Create & Company Assigned */}
           {(gameState.phase === 'character_create' || gameState.phase === 'company_assigned') && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              {/* Top on mobile, Left on desktop: 3D Live Character & Arena Preview */}
-              <div className="lg:col-span-6 space-y-3">
-                <div className="h-[290px] sm:h-[430px] lg:h-[510px] w-full">
-                  <Suspense
-                    fallback={
-                      <div className="w-full h-full pixel-card flex items-center justify-center font-pixel text-xs text-amber-300">
-                        {isEn ? 'Loading 3D Voxel Arena...' : '3D 복셀 아레나 준비 중...'}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+              {/* Mobile Bottom / Desktop Left Sticky: Instant 2D Pixel War-Room Viewer or Live 3D Voxel Canvas */}
+              <div className="order-2 lg:order-1 lg:col-span-6 lg:sticky lg:top-24 space-y-3">
+                <div className="h-[295px] sm:h-[420px] lg:h-[500px] w-full">
+                  {showSetup3D ? (
+                    <Suspense
+                      fallback={
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 rounded-2xl border-4 border-slate-800 text-slate-300 font-pixel gap-3 shadow-[4px_4px_0_#000]">
+                          <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm font-bold text-amber-300">
+                            {isEn ? 'Loading 3D Voxel Arena...' : '3D 복셀 홍보실 로딩 중...'}
+                          </span>
+                        </div>
+                      }
+                    >
+                      <BattleArenaCanvas
+                        phase={gameState.phase}
+                        stage={1}
+                        playerName={gameState.player.name}
+                        playerAppearance={gameState.player.appearance}
+                        journalists={[]}
+                        headline={currentHeadline}
+                        deadline={5}
+                        pressure={52}
+                        visualCue={gameState.visualCue}
+                      />
+                    </Suspense>
+                  ) : (
+                    <div className="w-full h-full rounded-2xl border-4 border-slate-800 bg-gradient-to-b from-slate-900 via-[#101829] to-slate-950 shadow-[4px_4px_0_#000] p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">
+                      {/* Breaking Ticker Top Bar */}
+                      <div className="newspaper-banner px-3 py-1.5 rounded flex items-center justify-between gap-2 text-xs font-pixel">
+                        <span className="bg-red-600 text-white px-2 py-0.5 font-extrabold shrink-0">
+                          {isEn ? 'BREAKING' : '단독예고'}
+                        </span>
+                        <span className="truncate font-bold">{currentHeadline}</span>
+                        <span className="text-[11px] text-red-700 font-bold shrink-0">D-5</span>
                       </div>
-                    }
-                  >
-                    <BattleArenaCanvas
-                      phase={gameState.phase}
-                      stage={1}
-                      playerName={gameState.player.name}
-                      playerAppearance={gameState.player.appearance}
-                      journalists={[]}
-                      headline={currentHeadline}
-                      deadline={5}
-                      pressure={52}
-                      visualCue={gameState.visualCue}
-                    />
-                  </Suspense>
+
+                      {/* Center Pixel Voxel Avatar & Confrontation Stage Preview */}
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-5 my-auto py-2">
+                        {/* Stylized Voxel PR Chief Character Preview */}
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-24 h-28 rounded-xl bg-slate-950/90 border-2 border-amber-400/70 shadow-[3px_3px_0_#000] flex flex-col items-center justify-center p-2 relative">
+                            {/* Hair */}
+                            <div
+                              className="w-11 h-3.5 rounded-t-sm bg-slate-900 border border-slate-700"
+                              style={{
+                                borderBottomWidth: gameState.player.appearance.hairStyle === 'bob' ? '6px' : '2px',
+                              }}
+                            />
+                            {/* Head */}
+                            <div
+                              className="w-10 h-9 border border-black/40 flex items-center justify-center relative"
+                              style={{ backgroundColor: gameState.player.appearance.skinTone }}
+                            >
+                              {gameState.player.appearance.glasses ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="w-2.5 h-2 border border-slate-900 bg-sky-200/50 inline-block" />
+                                  <span className="w-2.5 h-2 border border-slate-900 bg-sky-200/50 inline-block" />
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-1.5 h-1.5 bg-slate-900 inline-block" />
+                                  <span className="w-1.5 h-1.5 bg-slate-900 inline-block" />
+                                </div>
+                              )}
+                            </div>
+                            {/* Suit & Tie */}
+                            <div
+                              className="w-12 h-9 rounded-b-sm border border-black/50 flex justify-center pt-1"
+                              style={{ backgroundColor: gameState.player.appearance.suitColor }}
+                            >
+                              <div
+                                className="w-2 h-6"
+                                style={{ backgroundColor: gameState.player.appearance.tieColor }}
+                              />
+                            </div>
+                          </div>
+                          <span className="font-pixel text-xs text-amber-300 font-bold">
+                            {gameState.player.name} ({gameState.player.experienceYears}
+                            {isEn ? 'y' : '년차'})
+                          </span>
+                        </div>
+
+                        <div className="font-pixel text-xl sm:text-2xl text-rose-400 font-black">VS</div>
+
+                        {/* Reporter Silhouette Card */}
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-24 h-28 rounded-xl bg-slate-950/90 border-2 border-rose-500/70 shadow-[3px_3px_0_#000] flex flex-col items-center justify-center p-2 text-center">
+                            <span className="text-3xl">🎙️</span>
+                            <span className="font-pixel text-[11px] text-rose-300 font-bold mt-1.5">
+                              {isEn ? '12 Beat Reporters' : '출입기자 12유형'}
+                            </span>
+                            <span className="font-pixel text-[10px] text-slate-400">
+                              {isEn ? 'Memory & Affinity' : '기억·상성 AI'}
+                            </span>
+                          </div>
+                          <span className="font-pixel text-xs text-rose-300 font-bold">
+                            {isEn ? '6 Crisis Stages' : '6단계 위기 취재'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Toggle to Load Full 3D Voxel Canvas on Demand */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/90">
+                        <span className="text-[11px] font-pixel text-slate-400">
+                          {isEn
+                            ? '⚡ Fast 2D Briefing Mode (3D auto-loads in battle)'
+                            : '⚡ 초고속 브리핑 프리뷰 (본 게임 출격 시 3D 자동 가동)'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowSetup3D(true)}
+                          className="pixel-btn-mc px-3 py-1.5 text-[11px] text-sky-200 border-sky-500 font-bold"
+                        >
+                          🧊 {isEn ? 'Enable Live 3D Voxel Preview' : '3D 복셀 캐릭터 미리보기 켜기'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Personnel Craft Signature Bottom Status Briefing Chip */}
+                <div className="bg-slate-900/95 p-3 rounded-xl border-2 border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2 shadow-[2px_2px_0_#000] font-pixel">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-slate-100 font-bold">
+                      {gameState.player.name} ({isEn ? `Year ${gameState.player.experienceYears} PR Lead` : `${gameState.player.experienceYears}년차 홍보팀장`})
+                    </span>
+                  </div>
+                  <div className="text-amber-300 bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
+                    {gameState.phase === 'company_assigned'
+                      ? isEn
+                        ? `${gameState.player.companyName} · ${scaleMeta.nameEn}`
+                        : `${gameState.player.companyName} · ${scaleMeta.nameKo} (${indMeta.nameKo})`
+                      : isEn
+                        ? `Target: ${gameState.player.companyName}`
+                        : `소속 예정: ${gameState.player.companyName}`}
+                  </div>
                 </div>
 
                 {/* Quick Game Concept Highlight Strip */}
@@ -231,13 +457,18 @@ const HongdamAppInner: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: Setup Form */}
-              <div className="lg:col-span-6">
+              {/* Mobile Top (Zero Scroll!) / Desktop Right: Setup Form */}
+              <div className="order-1 lg:order-2 lg:col-span-6">
                 <CharacterCreationScreen
                   phase={gameState.phase}
                   profile={gameState.player}
                   company={gameState.company}
+                  rerollsLeft={rerollsLeft}
+                  incomingChallenge={incomingChallenge}
                   onChangeProfile={handleUpdateSetupProfile}
+                  onQuickStart={handleQuickStart}
+                  onAcceptChallenge={handleAcceptChallenge}
+                  onDismissChallenge={handleDismissChallenge}
                   onAssignCompany={handleAssignCompany}
                   onRerollCompany={handleRerollCompany}
                   onStartStage1={handleStartStage1}
@@ -250,14 +481,17 @@ const HongdamAppInner: React.FC = () => {
 
           {/* ACTIVE BATTLE PHASE (Mobile: 3D Top -> Inventory Bottom; Desktop: 2-Column) */}
           {gameState.phase === 'battle' && gameState.stageBattle && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-              {/* Left / Top: 3D Battle Arena + HUD */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left / Top: 3D Battle Arena + Status Chip + HUD */}
               <div className="lg:col-span-6 space-y-3">
                 <div className="h-[275px] sm:h-[360px] lg:h-[395px] w-full">
                   <Suspense
                     fallback={
-                      <div className="w-full h-full pixel-card flex items-center justify-center font-pixel text-xs text-amber-300">
-                        {isEn ? 'Loading 3D PR Battle...' : '3D 복셀 배틀 장면 로딩 중...'}
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 rounded-2xl border-4 border-slate-800 text-slate-300 font-pixel gap-3 shadow-[4px_4px_0_#000]">
+                        <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm font-bold text-amber-300">
+                          {isEn ? 'Loading 3D PR Battle...' : '3D 복셀 배틀 장면 로딩 중...'}
+                        </span>
                       </div>
                     }
                   >
@@ -273,6 +507,22 @@ const HongdamAppInner: React.FC = () => {
                       visualCue={gameState.visualCue}
                     />
                   </Suspense>
+                </div>
+
+                {/* Personnel Craft Signature Status Briefing Chip */}
+                <div className="bg-slate-900/95 p-2.5 rounded-xl border-2 border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2 shadow-[2px_2px_0_#000] font-pixel">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-slate-100 font-bold">
+                      {gameState.player.companyName} · {gameState.player.name} ({gameState.player.experienceYears}
+                      {isEn ? 'y' : '년차'})
+                    </span>
+                  </div>
+                  <div className="text-amber-300 bg-slate-950 px-2.5 py-0.5 rounded border border-slate-800">
+                    {isEn
+                      ? `${scaleMeta.nameEn} · ${indMeta.nameEn}`
+                      : `${scaleMeta.nameKo} · ${indMeta.nameKo}`}
+                  </div>
                 </div>
 
                 <BattleHUD
@@ -347,6 +597,7 @@ const HongdamAppInner: React.FC = () => {
 
               <EndingResultScreen
                 state={gameState}
+                finishedCount={finishedCount}
                 onOpenShareCard={() => setShowShareCard(true)}
                 onOpenBambooWithEnding={() => setShowBamboo(true)}
                 onOpenWhatIf={(stg) => setWhatIfStage(stg)}

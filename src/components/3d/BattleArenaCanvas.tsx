@@ -66,7 +66,15 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
   const { isEn } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [webGLFailed, setWebGLFailed] = useState(false);
+  const [webGLFailed, setWebGLFailed] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return false;
+    try {
+      const probe = document.createElement('canvas');
+      return !(probe.getContext('webgl2') || probe.getContext('webgl'));
+    } catch {
+      return true;
+    }
+  });
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -102,7 +110,7 @@ export const BattleArenaCanvas: React.FC<BattleArenaCanvasProps> = ({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
     } catch {
-      setWebGLFailed(true);
+      queueMicrotask(() => setWebGLFailed(true));
       return;
     }
 

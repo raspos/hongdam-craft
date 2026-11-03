@@ -33,6 +33,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint & Automated Simulation Verification
+        run: |
+          npm run lint
+          npm run test:sim
+
       - name: Build project
         run: npm run build
 

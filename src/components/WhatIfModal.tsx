@@ -372,27 +372,34 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
 
                 {/* Single-Turn Immediate Delta vs Stage-End Separation */}
                 {immediateTurnComparison && (
-                  <div className="bg-sky-950/40 border border-sky-600/60 rounded p-2.5 text-xs flex flex-wrap items-center justify-between gap-2 font-pixel">
-                    <span className="text-sky-300 font-bold">
-                      ⚡{' '}
-                      {isEn
-                        ? `[Turn ${immediateTurnComparison.turnNum} Immediate Single-Action Effect]`
-                        : `[${immediateTurnComparison.turnNum}턴 직후 단일 행동 직접 효과]`}
-                    </span>
-                    <div className="flex flex-wrap gap-3 text-[11px]">
-                      <span>
-                        {isEn ? 'Pressure:' : '직후 압박:'} <b>{immediateTurnComparison.actPressure}%</b> →{' '}
-                        <b className="text-amber-300">{immediateTurnComparison.cfPressure}%</b>
+                  <div className="bg-sky-950/40 border border-sky-600/60 rounded p-3 text-xs space-y-1.5 font-pixel">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sky-300 font-bold">
+                        ⚡{' '}
+                        {isEn
+                          ? `[1. Pure Immediate Causal Effect — Right After Turn ${immediateTurnComparison.turnNum}]`
+                          : `[1. 순수 단일 선택 인과 효과 — ${immediateTurnComparison.turnNum}턴 직후 변화]`}
                       </span>
-                      <span>
-                        XP: <b>{immediateTurnComparison.actXp}</b> →{' '}
-                        <b className="text-amber-300">{immediateTurnComparison.cfXp}</b>
-                      </span>
-                      <span>
-                        RISK: <b>{immediateTurnComparison.actRisk}</b> →{' '}
-                        <b className="text-amber-300">{immediateTurnComparison.cfRisk}</b>
-                      </span>
+                      <div className="flex flex-wrap gap-3 text-[11px]">
+                        <span>
+                          {isEn ? 'Pressure:' : '직후 압박:'} <b>{immediateTurnComparison.actPressure}%</b> →{' '}
+                          <b className="text-amber-300">{immediateTurnComparison.cfPressure}%</b>
+                        </span>
+                        <span>
+                          XP: <b>{immediateTurnComparison.actXp}</b> →{' '}
+                          <b className="text-amber-300">{immediateTurnComparison.cfXp}</b>
+                        </span>
+                        <span>
+                          RISK: <b>{immediateTurnComparison.actRisk}</b> →{' '}
+                          <b className="text-amber-300">{immediateTurnComparison.cfRisk}</b>
+                        </span>
+                      </div>
                     </div>
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      {isEn
+                        ? '※ Immediate Turn Δ isolates the pure causal impact of swapping this single move under identical RNG state. Stage-end totals below also reflect downstream path-dependence (changed pressure/RISK/buffs can alter subsequent sudden-event eligibility and RNG draw order).'
+                        : '※ ‘직후 변화’는 동일한 난수 상태 위에서 해당 턴 행동만 바꿨을 때의 순수 인과 효과이며, 아래 표의 ‘스테이지 종료 결과’는 압박·RISK·버프 변화로 인해 후속 돌발 이벤트 발동 조건 및 난수 호출 순서가 달라진 연쇄 경로 효과까지 포함합니다.'}
+                    </p>
                   </div>
                 )}
 
@@ -542,8 +549,8 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
           <HelpCircle className="w-4 h-4 text-sky-400 shrink-0" />
           <span>
             {isEn
-              ? 'Virtual Simulation Disclaimer: Counterfactual outcomes reflect deterministic game rules under identical RNG seeds, not real-world media predictions.'
-              : '가상 모형 고지: 위 반사실 비교 결과는 동일한 난수 시드 아래 게임 내 수칙으로 계산된 가상 시뮬레이션이며 실제 현실의 언론·기업 행동을 예측하지 않습니다.'}
+              ? 'Virtual Simulation & RNG Branching Note: Counterfactuals use the exact initial StageReplaySnapshot seed, but altered choices can shift downstream sudden-event triggers and RNG draw order. All figures reflect virtual game rules, not real-world media predictions.'
+              : '가상 모형 및 난수 분기 고지: WHAT IF는 스테이지 시작 시점의 동일 시드 스냅샷을 복원하지만, 중간 선택 변경 시 압박·RISK 변화에 따라 후속 돌발 상황 발동과 난수 호출 순서가 분기될 수 있습니다. 모든 수치는 게임 규칙에 따른 가상 실험 결과입니다.'}
           </span>
         </div>
       </div>

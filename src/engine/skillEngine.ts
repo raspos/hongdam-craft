@@ -137,11 +137,24 @@ export function evaluateSkillPreview(state: GameState, skillId: string): SkillEx
     (battle.buffs.factChecked || battle.buffs.disclosureAudited) &&
     skill.id === 'E18_factual_correction'
   ) {
-    flatPressureBonus -= 10;
+    flatPressureBonus -= 6;
     if (affinityRating === 'neutral') affinityRating = 'good';
   }
   if (lead.isAnalyzed) {
     pMult *= 1.12;
+  }
+  // Returning journalist tactic-memory fatigue preview
+  if (lead.isReturning) {
+    const poolRec = state.journalistPool.find((m) => m.id === lead.memoryId);
+    if (poolRec) {
+      if ((skill.id === 'E17_apology_compensation' || skill.id === 'E19_exec_reform') && poolRec.sincereRemedies >= 2) {
+        pMult *= 0.58;
+      } else if ((skill.id === 'A02_coffee_lunch' || skill.id === 'A03_bomb_shot') && poolRec.winedAndDined >= 2) {
+        pMult *= 0.62;
+      } else if ((skill.id === 'A04_press_statement' || skill.id === 'E18_factual_correction') && poolRec.accurateDataGiven >= 3) {
+        pMult *= 0.72;
+      }
+    }
   }
   // Streak diminishing returns
   if (battle.lastCategory === skill.category && battle.sameCategoryStreak >= 1) {
@@ -376,6 +389,11 @@ export function executePlayerSkill(
         reputationDelta += 5;
         extraNoteKo = '철저한 사전 검증 덕분에 기자회견 질의응답을 완벽히 주도했습니다!';
         extraNoteEn = 'Backed by verified facts, your live press conference commanded the room!';
+      } else if (lead.stats.intimacy >= 54) {
+        pressureDelta = Math.round(pressureDelta * 1.32);
+        reputationDelta += 3;
+        extraNoteKo = '평소 쌓아둔 출입기자단과의 두터운 신뢰(TRUST) 덕분에 우호적인 질의응답이 이어졌습니다!';
+        extraNoteEn = 'Strong press rapport kept Q&A constructive and amplified your briefing!';
       } else if (rng.chance(0.45)) {
         backfired = true;
         pressureDelta = 12;
@@ -389,11 +407,11 @@ export function executePlayerSkill(
     case 'ceo_address': {
       // Consolidates CEO Official Address + Chairman's Direct Mandate
       if (battle.stage >= 4) pressureDelta -= 5;
-      if (buffs.factChecked || buffs.tfTurnsLeft > 0) {
+      if (buffs.factChecked || buffs.tfTurnsLeft > 0 || lead.stats.intimacy >= 55) {
         pressureDelta -= 10;
         reputationDelta += 4;
-        extraNoteKo = 'CEO 공식 담화와 회장님의 전권 수습 결단이 결합해 판세를 크게 흔들었습니다!';
-        extraNoteEn = 'CEO address backed by Chairman’s full mandate turned the tide decisively!';
+        extraNoteKo = 'CEO 공식 담화와 사전 소통 신뢰가 결합해 판세를 크게 흔들었습니다!';
+        extraNoteEn = 'CEO address backed by solid press rapport turned the tide decisively!';
       } else if (rng.chance(0.28)) {
         backfired = true;
         pressureDelta = 12;
@@ -436,16 +454,30 @@ export function executePlayerSkill(
     }
     case 'legal_threat': {
       if (memRec) memRec.legalThreatsReceived += 1;
-      if (lead.stats.evidenceLevel < 52 && !backfired) {
-        pressureDelta = -24;
-        extraNoteKo = '증거가 부족했던 기자가 가처분·소송 리스크를 의식해 기사 수위를 낮췄습니다.';
-        extraNoteEn = 'With thin evidence, the injunction warning forced a cautious rewrite.';
+      const evidenceCap = buffs.legalShieldActive ? 72 : 55;
+      if (lead.stats.evidenceLevel < evidenceCap && !backfired) {
+        pressureDelta = buffs.legalShieldActive ? -25 : -22;
+        if (buffs.legalShieldActive) {
+          riskDelta = Math.max(6, riskDelta - 7);
+          trustDelta = Math.round(trustDelta * 0.55);
+        }
+        extraNoteKo = buffs.legalShieldActive
+          ? '사내 법무팀의 정밀 법리 검토를 거친 경고장으로 무리한 추측 보도를 효과적으로 제동했습니다!'
+          : '증거가 부족했던 기자가 가처분·소송 리스크를 의식해 기사 수위를 낮췄습니다.';
+        extraNoteEn = buffs.legalShieldActive
+          ? 'Backed by Legal Team review, your formal notice deterred speculative claims cleanly!'
+          : 'With thin evidence, the injunction warning forced a cautious rewrite.';
+      } else if (buffs.legalShieldActive) {
+        pressureDelta = -7;
+        riskDelta = Math.max(8, riskDelta - 5);
+        extraNoteKo = '기자 측 증거가 탄탄했으나 법무팀 사전 조율 덕분에 전면전 역풍은 피했습니다.';
+        extraNoteEn = 'Reporter held firm proof, but Legal Team vetting prevented a full-blown war.';
       } else {
         backfired = true;
         pressureDelta = 15;
         trustDelta = -22;
         reputationDelta -= 6;
-        extraNoteKo = '확실한 증거를 쥔 기자에게 소송 협박을 했다가 전면전이 벌어졌습니다!';
+        extraNoteKo = '확실한 증거를 쥔 기자에게 무턱대고 소송 협박을 했다가 전면전이 벌어졌습니다!';
         extraNoteEn = 'Threatening a reporter holding hard proof ignited all-out press war!';
       }
       break;
@@ -467,42 +499,105 @@ export function executePlayerSkill(
       // Consolidates Sincere Public Apology + Victim Compensation Plan
       buffs.apologyIssued = true;
       buffs.compensationIssued = true;
+      const repeatedApology = Boolean(lead.isReturning && memRec && memRec.sincereRemedies >= 2);
       if (memRec) memRec.sincereRemedies += 1;
+
       if (
-        buffs.whistleblowerVerified ||
-        battle.stage === 1 ||
-        battle.stage === 2 ||
-        battle.ownerVariant === 'safety_coverup'
+        battle.internalCredibility === 'solid_company' &&
+        !buffs.factChecked &&
+        !buffs.whistleblowerVerified &&
+        battle.stage >= 2 &&
+        rng.chance(0.32)
       ) {
-        pressureDelta -= 7;
-        reputationDelta += 3;
+        backfired = true;
+        pressureDelta = 9;
+        reputationDelta = -4;
+        extraNoteKo = '사실무근·과장 제보였는데 확인도 없이 성급히 사과했다가 “결국 혐의 시인!” 단독 속보가 터졌습니다!';
+        extraNoteEn = 'Apologizing blindly to an unverified false rumor got framed as a full admission of guilt!';
+      } else if (battle.internalCredibility === 'solid_company' && !buffs.whistleblowerVerified) {
+        pressureDelta = Math.round(pressureDelta * 0.62);
+        reputationDelta = Math.max(2, reputationDelta - 4);
+        extraNoteKo = '회사 과실이 크지 않은 사안에 사과부터 내놓아 불필요한 책임론이 일부 남았습니다.';
+        extraNoteEn = 'Over-apologizing on a minor/exaggerated claim left lingering doubts.';
+      } else {
+        if (
+          battle.internalCredibility === 'whistleblower_truth' ||
+          buffs.whistleblowerVerified ||
+          battle.ownerVariant === 'safety_coverup'
+        ) {
+          pressureDelta -= 5;
+          reputationDelta += 2;
+        }
+        extraNoteKo = '진정성 있는 공식 사과와 선제적 피해 보상안 발표로 여론이 우호적으로 돌아섰습니다!';
+        extraNoteEn = 'Sincere public apology paired with victim restitution turned public mood around!';
       }
-      extraNoteKo = '진정성 있는 공식 사과와 선제적 피해 보상안 발표로 여론이 우호적으로 돌아섰습니다!';
-      extraNoteEn = 'Sincere public apology paired with victim restitution turned public mood around!';
+
+      if (!backfired && repeatedApology) {
+        pressureDelta = Math.round(pressureDelta * 0.58);
+        extraNoteKo = '재등장 기자가 “지난번에도 사과하고 똑같지 않냐”며 반복된 사과 패턴에 냉담하게 반응합니다 (효과 감소)!';
+        extraNoteEn = 'Returning reporter remembers your previous apology script—impact sharply reduced!';
+      }
       break;
     }
     case 'factual_correction': {
-      if (buffs.factChecked || buffs.disclosureAudited) {
-        pressureDelta -= 10;
-        reputationDelta += 4;
+      const repeatedData = Boolean(lead.isReturning && memRec && memRec.accurateDataGiven >= 3);
+      if (
+        battle.internalCredibility === 'whistleblower_truth' &&
+        lead.stats.evidenceLevel >= 68 &&
+        !buffs.apologyIssued &&
+        !buffs.reformIssued &&
+        battle.stage >= 3 &&
+        rng.chance(0.22)
+      ) {
+        backfired = true;
+        pressureDelta = 9;
+        trustDelta = -10;
+        reputationDelta -= 3;
+        extraNoteKo = '회사 과실 증거가 명백한 사안에서 기계적 정정만 요구하다 “반성 없는 발뺌” 역풍을 맞았습니다!';
+        extraNoteEn = 'Demanding factual corrections against hard proof of real fault sparked fierce pushback!';
+      } else if (
+        battle.internalCredibility === 'whistleblower_truth' &&
+        lead.stats.evidenceLevel >= 64 &&
+        !buffs.apologyIssued
+      ) {
+        pressureDelta = Math.round(pressureDelta * 0.72);
+        extraNoteKo = '내부 과실 정황이 있어 단순 수치 정정만으로는 기자의 의구심을 완전히 꺾지 못했습니다.';
+        extraNoteEn = 'With real internal faults present, technical corrections had limited sway.';
+      } else if (buffs.factChecked || buffs.disclosureAudited) {
+        pressureDelta -= 8;
+        reputationDelta += 3;
         if (memRec) memRec.accurateDataGiven += 1;
-        extraNoteKo = '사전 팩트 검증 데이터와 결합해 완벽한 정정 근거를 제시했습니다!';
-        extraNoteEn = 'Paired with verified data, your correction proof was undeniable!';
+        extraNoteKo = '사전 팩트 검증 데이터와 결합해 탄탄한 정정 근거를 제시했습니다!';
+        extraNoteEn = 'Paired with verified data, your correction proof was compelling!';
       } else {
+        if (memRec) memRec.accurateDataGiven += 1;
         extraNoteKo = '사실과 다른 대목에 대해 정정 반박 자료를 제출했습니다.';
         extraNoteEn = 'Submitted factual correction materials.';
+      }
+      if (!backfired && repeatedData) {
+        pressureDelta = Math.round(pressureDelta * 0.72);
       }
       break;
     }
     case 'substantive_reform': {
       // Consolidates Executive Dismissal + Substantive Structural Reform
       buffs.reformIssued = true;
+      const repeatedReform = Boolean(lead.isReturning && memRec && memRec.sincereRemedies >= 2);
       if (memRec) memRec.sincereRemedies += 1;
-      if (buffs.whistleblowerVerified || buffs.factChecked) {
-        pressureDelta -= 7;
+      if (battle.internalCredibility === 'solid_company' && battle.stage <= 4) {
+        pressureDelta = Math.round(pressureDelta * 0.65);
+        extraNoteKo = '실체적 과실이 불분명한 상태에서 섣불리 임원을 경질해 조직 피로도가 커졌습니다.';
+        extraNoteEn = 'Prematurely dismissing brass on an unproven claim caused internal churn.';
+      } else {
+        if (buffs.whistleblowerVerified || buffs.factChecked) {
+          pressureDelta -= 4;
+        }
+        extraNoteKo = '책임 임원 문책과 근본적 재발 방지 개혁안을 단행해 신뢰 회복 발판을 마련했습니다!';
+        extraNoteEn = 'Executive accountability and structural reforms unlocked deep trust recovery!';
       }
-      extraNoteKo = '책임 임원 문책과 근본적 재발 방지 개혁안을 단행해 신뢰 회복 발판을 마련했습니다!';
-      extraNoteEn = 'Executive accountability and structural reforms unlocked deep trust recovery!';
+      if (repeatedReform) {
+        pressureDelta = Math.round(pressureDelta * 0.58);
+      }
       break;
     }
     case 'emergency_rest': {
@@ -514,20 +609,33 @@ export function executePlayerSkill(
     default: {
       // Standard A-category skills (A01~A04)
       if (skill.id === 'A02_coffee_lunch' || skill.id === 'A03_bomb_shot') {
+        const repeatedWine = Boolean(lead.isReturning && memRec && memRec.winedAndDined >= 2);
         if (!backfired && memRec) memRec.winedAndDined += 1;
-        if (skill.id === 'A03_bomb_shot') {
+        if (!backfired && repeatedWine) {
+          pressureDelta = Math.round(pressureDelta * 0.62);
+          extraNoteKo = '재등장 기자가 “이번에도 밥·술로 넘어가시려고요?”라며 스킨십 반복에 선을 긋습니다!';
+          extraNoteEn = 'Returning reporter shrugs off repeated dining/drinks—impact reduced!';
+        } else if (skill.id === 'A03_bomb_shot') {
           buffs.hangoverNextTurn = true;
           extraNoteKo = '폭탄주 투혼 발휘! (다음 턴 숙취로 체력 소모 +5 주의)';
           extraNoteEn = 'Bomb-shot gambit played! (Next turn +5 HP hangover penalty)';
         }
       }
       if (skill.id === 'A04_press_statement') {
+        const repeatedStmt = Boolean(lead.isReturning && memRec && memRec.accurateDataGiven >= 3);
         if (memRec) memRec.accurateDataGiven += 1;
         if (buffs.factChecked) {
-          pressureDelta = Math.round(pressureDelta * 1.45);
-          reputationDelta += 3;
-          extraNoteKo = '[팩트 검증 시너지] 탄탄한 원본 근거 덕분에 해명 효과가 1.45배 증폭되었습니다!';
-          extraNoteEn = '[Fact-Verified Synergy] 1.45x stronger statement & dataset impact!';
+          pressureDelta = Math.round(pressureDelta * 1.38);
+          reputationDelta += 2;
+          extraNoteKo = '[팩트 검증 시너지] 탄탄한 원본 근거 덕분에 해명 효과가 증폭되었습니다!';
+          extraNoteEn = '[Fact-Verified Synergy] Stronger statement & dataset impact!';
+        } else if (lead.stats.intimacy >= 56) {
+          pressureDelta = Math.round(pressureDelta * 1.25);
+          extraNoteKo = '[친밀도 시너지] 기자와의 신뢰 덕분에 공식 설명자료가 긍정적으로 반영되었습니다!';
+          extraNoteEn = '[Rapport Synergy] High reporter trust boosted statement receptivity!';
+        }
+        if (!backfired && repeatedStmt) {
+          pressureDelta = Math.round(pressureDelta * 0.72);
         }
       }
       break;

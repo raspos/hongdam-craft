@@ -2,7 +2,10 @@ import React, { useMemo, useState } from 'react';
 import {
   Award,
   BarChart3,
+  Check,
   Clock,
+  Copy,
+  Flame,
   GitBranch,
   HelpCircle,
   MessageSquarePlus,
@@ -19,10 +22,17 @@ import { runWhatIfFullStrategy } from '../engine/analyticsEngine';
 import { STAGE_RESOLUTION_META } from '../engine/progressionEngine';
 import { useLanguage } from '../i18n/LanguageContext';
 import { GameState, SkillCategory, StageNumber } from '../types/game';
+import {
+  buildEndingSharePayload,
+  buildEndingViralDiagnosis,
+  shareOrCopyChallenge,
+} from '../utils/challengeShare';
+import { trackFunnelStep } from '../utils/funnelTracker';
 import { sound } from '../utils/sound';
 
 interface EndingResultScreenProps {
   state: GameState;
+  finishedCount?: number;
   onOpenShareCard: () => void;
   onOpenBambooWithEnding: () => void;
   onOpenWhatIf: (stage: StageNumber) => void;
@@ -33,6 +43,7 @@ interface EndingResultScreenProps {
 
 export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
   state,
+  finishedCount = 0,
   onOpenShareCard,
   onOpenBambooWithEnding,
   onOpenWhatIf,
@@ -48,6 +59,7 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
   const [selectedTimelineStage, setSelectedTimelineStage] = useState<StageNumber>(
     (state.stageHistory[state.stageHistory.length - 1]?.stage || state.currentStage || 1) as StageNumber
   );
+  const [viralFeedback, setViralFeedback] = useState<'challenge' | 'copy' | null>(null);
 
   // Aggregate real telemetry metrics (Section 6: strictly from actual telemetryLogs!)
   const metrics = useMemo(() => {
@@ -116,6 +128,26 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
   const archDef = PR_ARCHETYPES[endSum.archetypeId];
   const scaleDef = COMPANY_SCALES[state.company.scale];
   const indDef = INDUSTRIES[state.company.industry];
+  const viralDiag = buildEndingViralDiagnosis(state);
+
+  const handleViralChallengeShare = async () => {
+    sound.playClick();
+    const payload = buildEndingSharePayload(state, isEn);
+    await shareOrCopyChallenge(payload, state.playId);
+    setViralFeedback('challenge');
+    window.setTimeout(() => setViralFeedback(null), 3200);
+  };
+
+  const handleCopyViralReport = async () => {
+    sound.playClick();
+    const payload = buildEndingSharePayload(state, isEn);
+    trackFunnelStep('share', state.playId);
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(`${payload.text}\n${payload.url}`);
+    }
+    setViralFeedback('copy');
+    window.setTimeout(() => setViralFeedback(null), 3200);
+  };
 
   const renderLineSvg = (values: number[], strokeColor: string) => {
     const w = 440;
@@ -145,12 +177,41 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
 
   return (
     <div className="space-y-5">
+      {/* Personal Run Completion Badge (Personnel Craft Design Consistency) */}
+      {finishedCount > 0 && (
+        <div className="flex justify-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-xs font-pixel shadow-sm select-none">
+            <Award className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-slate-400">
+              {isEn ? 'My Simulation Record:' : '나의 시뮬레이션 도전 기록:'}
+            </span>
+            <span className="font-bold text-amber-300">
+              {isEn ? `Run #${finishedCount} Completed` : `제${finishedCount}회차 완주`}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1. Ending Story & PR Chief Archetype Hero Card */}
       <div
-        className={`pixel-card p-5 sm:p-6 space-y-4 ${
+        className={`pixel-card p-5 sm:p-6 space-y-4 relative overflow-hidden ${
           endDef.isVictory ? 'border-amber-400' : 'border-rose-500'
         }`}
       >
+        {/* Personnel Craft Newspaper Stamp Accent */}
+        <div
+          className={`hidden sm:inline-block absolute top-4 right-5 newspaper-stamp text-xs ${
+            endDef.isVictory ? 'stamp-green' : ''
+          }`}
+        >
+          {endDef.isVictory
+            ? isEn
+              ? 'CRISIS CLEARED'
+              : '위기방어 완주'
+            : isEn
+              ? 'HEADLINE HIT'
+              : '단독보도 직격'}
+        </div>
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -239,6 +300,94 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Viral One-Line Report Card & Same-Seed Friend Challenge */}
+        <div className="bg-gradient-to-r from-indigo-950/90 via-slate-900 to-rose-950/80 border-2 border-rose-400/75 rounded-lg p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-pixel text-xs text-amber-300 font-bold flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-rose-400" />
+              <span>
+                {isEn
+                  ? 'SHAREABLE REPORT CARD & SAME-SEED CHALLENGE'
+                  : '나의 홍담 한줄 성적표 & 동일 조건 친구 도전장'}
+              </span>
+            </span>
+            <span className="font-pixel text-[10px] text-slate-400">
+              Seed #{state.seed} · {isEn ? scaleDef.nameEn : scaleDef.nameKo}
+            </span>
+          </div>
+
+          <div className="bg-slate-950/90 border border-slate-800 rounded p-3 space-y-1.5 text-xs">
+            <div className="font-pixel text-white font-bold text-sm">
+              {isEn
+                ? `You are ‘${archDef.nameEn}’ among the 8 PR Chief types.`
+                : `당신은 8가지 홍보팀장 중 ‘${archDef.nameKo}’ 입니다.`}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 font-pixel text-[11px] text-slate-300">
+              <span>
+                {isEn ? 'Crisis Defense:' : '언론 대응 성공률:'}{' '}
+                <b className="text-amber-300">{viralDiag.defenseRatePct}%</b> ({viralDiag.clearedCount}/6)
+              </span>
+              <span>·</span>
+              <span>
+                {isEn ? 'Press Rapport:' : '기자와의 관계:'}{' '}
+                <b className="text-emerald-300">{isEn ? viralDiag.pressTierEn : viralDiag.pressTierKo}</b>
+              </span>
+              <span>·</span>
+              <span>
+                {isEn ? 'Public Trust:' : '기업 평판:'}{' '}
+                <b className="text-sky-300">{isEn ? viralDiag.repTierEn : viralDiag.repTierKo}</b>
+              </span>
+            </div>
+            <p className="text-amber-200 font-medium pt-0.5">
+              “{isEn ? viralDiag.punchlineEn : viralDiag.punchlineKo}”
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <button
+              type="button"
+              onClick={handleViralChallengeShare}
+              className="pixel-btn-mc pixel-btn-mc-primary flex-1 py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-1.5"
+            >
+              {viralFeedback === 'challenge' ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-300" />
+                  <span>
+                    {isEn ? 'Challenge Link Ready!' : '도전장 링크 공유·복사 완료!'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Flame className="w-4 h-4 text-amber-300" />
+                  <span>
+                    {isEn
+                      ? 'Challenge a Friend (Exact Same Company & Reporters)'
+                      : '🔥 같은 회사·같은 기자로 친구에게 도전장 보내기'}
+                  </span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyViralReport}
+              className="pixel-btn-mc px-3.5 py-2.5 text-xs font-bold text-slate-100 border-slate-500 flex items-center justify-center gap-1.5"
+            >
+              {viralFeedback === 'copy' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{isEn ? 'Copied!' : '성적표 복사됨!'}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-sky-300" />
+                  <span>{isEn ? 'Copy Report Text' : '성적표 문구 복사'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 2. DATA JOURNALISM COMPREHENSIVE REPORT (Section 6) */}
@@ -255,7 +404,7 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
             </div>
             <h3 className="font-pixel text-lg sm:text-xl text-white font-extrabold mt-0.5">
               {isEn
-                ? '“How YouFought Through Six Media Crises — By The Numbers”'
+                ? '“How You Fought Through Six Media Crises — By The Numbers”'
                 : '“당신은 어떻게 6번의 언론 위기를 살아남았나”'}
             </h3>
           </div>

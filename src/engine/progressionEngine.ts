@@ -82,8 +82,8 @@ export const STAGE_RESOLUTION_META: Record<
     descKo: '보도 압박을 낮추지 못한 채 마감이 도래해 1면 비판 기사가 강행 출고되었습니다! 평판에 큰 타격을 입습니다.',
     descEn: 'Deadline hit with high press pressure—a scathing headline slammed corporate reputation!',
     isSuccess: false,
-    reputationBonus: -20,
-    xpBonusMultiplier: 0.55,
+    reputationBonus: -14,
+    xpBonusMultiplier: 0.65,
   },
 };
 
@@ -145,13 +145,15 @@ export function calculateStageRewards(
     ? Math.round(scaleDef.stageRewardXp * resMeta.xpBonusMultiplier * growthBonus * stageScale)
     : 0;
 
-  const hpReward = stage < 6 ? (resMeta.isSuccess ? 24 : 14) : 0;
+  const hpReward = stage < 6 ? (resMeta.isSuccess ? 26 : 20) : 0;
   const reputationShift = Math.round(
     resMeta.reputationBonus * (resMeta.reputationBonus < 0 ? company.reputationSensitivity : 1.0)
   );
 
   const gradeScoreMap = { S: 220, A: 175, B: 135, C: 95, F: 30 };
-  const careerScoreGain = gradeScoreMap[grade] + stage * 25;
+  const careerScoreGain = Math.round(
+    (gradeScoreMap[grade] + stage * 25) * (scaleDef.scoreMultiplier || 1.0)
+  );
 
   const nextStage = Math.min(6, stage + 1) as StageNumber;
   const newlyUnlockedSkillIds = PR_SKILLS.filter((s) => s.minStage === nextStage).map((s) => s.id);
@@ -161,7 +163,7 @@ export function calculateStageRewards(
     xp: Math.max(0, currentResources.xp + xpReward),
     hp: clamp(currentResources.hp + hpReward, 0, currentResources.maxHp),
     reputation: clamp(currentResources.reputation + reputationShift, 0, BALANCE.MAX_REPUTATION),
-    risk: resMeta.isSuccess ? clamp(currentResources.risk - 4, 0, BALANCE.MAX_RISK) : clamp(currentResources.risk + 8, 0, BALANCE.MAX_RISK),
+    risk: resMeta.isSuccess ? clamp(currentResources.risk - 7, 0, BALANCE.MAX_RISK) : clamp(currentResources.risk + 6, 0, BALANCE.MAX_RISK),
     careerScore: currentResources.careerScore + careerScoreGain,
   };
 

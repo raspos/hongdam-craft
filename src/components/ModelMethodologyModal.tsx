@@ -126,8 +126,13 @@ export const ModelMethodologyModal: React.FC<ModelMethodologyModalProps> = ({ on
           </div>
           <p className="text-slate-300">
             {isEn
-              ? '• WHAT IF: Captures an immutable StageReplaySnapshot (exact RNG seed, journalist stats, internal credibility, and starting resources) at the start of every stage so alternative skill sequences are evaluated under identical random draws.'
-              : '• WHAT IF 반사실 비교: 각 스테이지 개시 시점의 난수 시드(rngStateAtStart)와 기자 능력치·사건 조건을 스냅샷으로 저장한 뒤, 동일한 난수열 위에서 대안 스킬만 교체 실행해 순수 선택 차이를 측정합니다.'}
+              ? '• WHAT IF: Captures an immutable StageReplaySnapshot (exact RNG seed, journalist stats, internal credibility, and starting resources) at the start of every stage so alternative skill sequences are evaluated from the exact same initial state.'
+              : '• WHAT IF 반사실 비교: 각 스테이지 개시 시점의 난수 시드(rngStateAtStart)와 기자 능력치·사건 조건을 스냅샷으로 저장한 뒤, 동일한 출발 조건에서 대안 스킬의 효과를 재현 비교합니다.'}
+          </p>
+          <p className="text-slate-300">
+            {isEn
+              ? '• Causal Effect vs Path-Dependent Branching: Swapping an action isolates pure causal impact on that exact turn; in subsequent turns, altered pressure/RISK/buffs can change sudden-event eligibility or RNG draw order. The WHAT IF modal therefore separates [Immediate Turn Δ] from [Cumulative Stage-End Δ].'
+              : '• 인과 효과와 경로 분기 구분: 동일 초기 시드를 사용하더라도 특정 턴의 행동이 바뀌면 이후 압박·RISK·버프 상태가 달라져 후속 돌발 이벤트 발동 조건과 난수 호출 순서가 분기될 수 있습니다. 이에 따라 WHAT IF 창에서는 [교체 턴 직후의 순수 인과 효과]와 [스테이지 종료 시점의 연쇄 경로 결과]를 구분해 표시합니다.'}
           </p>
           <p className="text-slate-300">
             {isEn

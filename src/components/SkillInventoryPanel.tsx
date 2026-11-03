@@ -20,7 +20,16 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
   const { isEn } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | 'ALL'>('A');
   const [focusedSkillId, setFocusedSkillId] = useState<string>('A01_phone_call');
-  const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
+  const [showUnlockedOnly, setShowUnlockedOnly] = useState(true);
+
+  const isStage1FirstTurn =
+    state.currentStage === 1 && (state.stageBattle?.turnNumber ?? 1) === 1;
+  const starterRecommendedIds = [
+    'B05_reporter_profiling',
+    'B06_internal_factcheck',
+    'A01_phone_call',
+    'A04_press_statement',
+  ];
 
   const previews = useMemo(() => {
     const map: Record<string, SkillExecutionPreview> = {};
@@ -70,7 +79,25 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
     onExecuteSkill(skillId);
   };
 
-  const renderAffinityBadge = (rating: SkillExecutionPreview['affinityRating']) => {
+  const renderAffinityBadge = (
+    rating: SkillExecutionPreview['affinityRating'],
+    skillId: string
+  ) => {
+    if (!leadAnalyzed) {
+      if (skillId === 'B05_reporter_profiling') {
+        return (
+          <span className="px-2 py-0.5 rounded border text-[10px] font-pixel bg-indigo-950 border-indigo-400 text-indigo-200">
+            {isEn ? '🔍 Reveals Exact Match + 1 Turn' : '🔍 상성·정밀수치 공개 (+1턴)'}
+          </span>
+        );
+      }
+      return (
+        <span className="px-2 py-0.5 rounded border text-[10px] font-pixel bg-slate-900 border-slate-700 text-slate-400">
+          {isEn ? '❔ Unanalyzed (#05 reveals)' : '❔ 상성 미확인 (#05 분석 시 공개)'}
+        </span>
+      );
+    }
+
     const map = {
       great: {
         ko: '🔥 최적 상성',
@@ -106,25 +133,104 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
     );
   };
 
+  const renderMaskedPressureEstimate = (basePressureDelta: number, category: SkillCategory) => {
+    if (basePressureDelta === 0) {
+      return isEn ? 'Prep / Recovery' : '준비·회복';
+    }
+    const suffix = category === 'D' ? (isEn ? ' (Backfire?)' : ' (역풍주의)') : '';
+    if (basePressureDelta <= -20) {
+      return isEn ? `Strong Drop${suffix}` : `큰 폭 감소 기대${suffix}`;
+    }
+    if (basePressureDelta <= -13) {
+      return isEn ? `Moderate Drop${suffix}` : `보통 감소 기대${suffix}`;
+    }
+    return isEn ? `Light Drop${suffix}` : `소폭 감소 기대${suffix}`;
+  };
+
   return (
     <div className="pixel-card p-3 sm:p-4 space-y-3">
+      {/* Stage 1 Turn 1 Starter Guide Banner */}
+      {isStage1FirstTurn && (
+        <div className="bg-indigo-950/85 border border-indigo-400/80 rounded-lg p-2.5 text-xs space-y-2">
+          <div className="font-pixel text-[11px] text-amber-300 font-bold flex items-center justify-between gap-2">
+            <span>
+              🎯 {isEn ? 'FIRST CRISIS GUIDE — Pick 1 of 3 Opening Moves!' : '첫 단독기사 대응 가이드 — 아래 추천 첫 수 중 하나로 시작해 보세요!'}
+            </span>
+            <span className="text-[10px] text-sky-300 hidden sm:inline">
+              {isEn ? '💾 Auto-saved · ~1 min' : '💾 자동 저장 · 약 1분 소요'}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            {[
+              {
+                id: 'B05_reporter_profiling',
+                cat: 'B' as SkillCategory,
+                ko: '🔍 #05 기자 성향 분석 (능력치+마감 +1턴)',
+                en: '🔍 #05 Analyze Reporter (+1 Turn)',
+              },
+              {
+                id: 'B06_internal_factcheck',
+                cat: 'B' as SkillCategory,
+                ko: '📋 #06 사내 팩트체크 (해명 1.45배 강화)',
+                en: '📋 #06 Internal Fact-Check (1.45x)',
+              },
+              {
+                id: 'A01_phone_call',
+                cat: 'A' as SkillCategory,
+                ko: '📞 #01 기자에게 전화 (저비용 초동 진화)',
+                en: '📞 #01 Call Reporter (Fast Low-Cost)',
+              },
+            ].map((rec) => (
+              <button
+                key={rec.id}
+                type="button"
+                onClick={() => {
+                  sound.playBlip();
+                  setSelectedCategory(rec.cat);
+                  setFocusedSkillId(rec.id);
+                }}
+                className={`px-2.5 py-1.5 rounded border text-left font-pixel text-[11px] transition-all ${
+                  focusedSkillId === rec.id
+                    ? 'bg-amber-600/30 border-amber-300 text-white font-bold'
+                    : 'bg-slate-950/90 border-slate-700 text-slate-200 hover:border-amber-400'
+                }`}
+              >
+                {isEn ? rec.en : rec.ko}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Header & Category Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="font-pixel text-xs sm:text-sm text-amber-300 font-bold flex items-center gap-1.5">
+        <div className="font-pixel text-xs sm:text-sm text-amber-300 font-bold flex items-center gap-1.5 flex-wrap">
           <Zap className="w-4 h-4 text-amber-400" />
           <span>
-            {isEn ? 'PR SKILL DECK (20 CORE SKILLS · 4 PER TAB)' : '홍보 대응 핵심 스킬 (총 20종 · 계열당 4종)'}
+            {isEn ? 'PR SKILL DECK' : '홍보 대응 스킬 인벤토리'}
           </span>
+          <span className="text-[10px] font-normal text-slate-400">
+            ({state.unlockedSkillIds.length}/20 {isEn ? 'unlocked' : '해금'})
+          </span>
+          {leadAnalyzed ? (
+            <span className="px-1.5 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/70 text-[10px] text-emerald-300 font-bold">
+              🧠 {isEn ? 'Intel Unlocked (Exact Numbers)' : '기자 성향 파악됨 (정밀 상성 공개)'}
+            </span>
+          ) : (
+            <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-400 font-normal">
+              🔒 {isEn ? 'Use #05 to reveal exact affinity' : '#05 분석 또는 재회 시 정밀 수치 공개'}
+            </span>
+          )}
         </div>
 
-        <label className="flex items-center gap-1.5 text-[11px] font-pixel text-slate-400 cursor-pointer">
+        <label className="flex items-center gap-1.5 text-[11px] font-pixel text-slate-300 cursor-pointer">
           <input
             type="checkbox"
-            checked={showUnlockedOnly}
-            onChange={(e) => setShowUnlockedOnly(e.target.checked)}
+            checked={!showUnlockedOnly}
+            onChange={(e) => setShowUnlockedOnly(!e.target.checked)}
             className="accent-amber-500"
           />
-          <span>{isEn ? 'Unlocked Only' : '해금 스킬만'}</span>
+          <span>{isEn ? 'Show Locked Skills Too' : '후반 잠금 스킬도 미리 보기'}</span>
         </label>
       </div>
 
@@ -191,7 +297,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
                 <h4 className="font-pixel text-sm sm:text-base text-white font-bold">
                   {isEn ? focusedSkill.nameEn : focusedSkill.nameKo}
                 </h4>
-                {renderAffinityBadge(focusedPreview.affinityRating)}
+                {renderAffinityBadge(focusedPreview.affinityRating, focusedSkill.id)}
               </div>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 {isEn ? focusedSkill.descEn : focusedSkill.descKo}
@@ -261,26 +367,35 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
 
             <span
               className={`px-2 py-0.5 rounded bg-slate-900 border ${
-                focusedPreview.expectedPressureDelta < 0
+                focusedPreview.expectedPressureDelta < 0 || focusedSkill.pressureDelta < 0
                   ? 'border-emerald-600/60 text-emerald-300'
-                  : 'border-rose-600/60 text-rose-300'
+                  : 'border-slate-700 text-slate-300'
               }`}
             >
               {isEn ? 'Pressure' : '보도압박'}:{' '}
-              {focusedPreview.expectedPressureDelta > 0
-                ? `+${focusedPreview.expectedPressureDelta}`
-                : focusedPreview.expectedPressureDelta}
+              {leadAnalyzed
+                ? focusedPreview.expectedPressureDelta > 0
+                  ? `+${focusedPreview.expectedPressureDelta}`
+                  : focusedPreview.expectedPressureDelta
+                : renderMaskedPressureEstimate(focusedSkill.pressureDelta, focusedSkill.category)}
             </span>
 
-            {focusedPreview.expectedRiskDelta !== 0 && (
+            {(leadAnalyzed ? focusedPreview.expectedRiskDelta !== 0 : focusedSkill.riskDelta !== 0) && (
               <span
                 className={`px-2 py-0.5 rounded bg-slate-900 border ${
-                  focusedPreview.expectedRiskDelta > 0
+                  (leadAnalyzed ? focusedPreview.expectedRiskDelta : focusedSkill.riskDelta) > 0
                     ? 'border-rose-500/70 text-rose-300'
                     : 'border-emerald-500/70 text-emerald-300'
                 }`}
               >
-                RISK: {focusedPreview.expectedRiskDelta > 0 ? `+${focusedPreview.expectedRiskDelta}` : focusedPreview.expectedRiskDelta}
+                RISK:{' '}
+                {leadAnalyzed
+                  ? focusedPreview.expectedRiskDelta > 0
+                    ? `+${focusedPreview.expectedRiskDelta}`
+                    : focusedPreview.expectedRiskDelta
+                  : focusedSkill.riskDelta > 0
+                    ? `+${focusedSkill.riskDelta}~?`
+                    : `${focusedSkill.riskDelta}`}
               </span>
             )}
 
@@ -359,13 +474,17 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
                 <span className="text-slate-400">
                   #{String(sk.num).padStart(2, '0')} {catMeta.icon}
                 </span>
-                {cd > 0 ? (
+                {isStage1FirstTurn && starterRecommendedIds.includes(sk.id) && prev.usable ? (
+                  <span className="px-1 py-0.2 rounded bg-amber-500/20 border border-amber-400 text-[9px] text-amber-300 font-bold">
+                    {isEn ? 'REC' : '추천'}
+                  </span>
+                ) : cd > 0 ? (
                   <span className="text-rose-400 font-bold">CD {cd}t</span>
                 ) : !prev.usable ? (
                   <Lock className="w-3 h-3 text-slate-500" />
                 ) : prev.lethalWarningType ? (
                   <Flame className="w-3.5 h-3.5 text-rose-500" />
-                ) : prev.affinityRating === 'great' ? (
+                ) : leadAnalyzed && prev.affinityRating === 'great' ? (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 ) : null}
               </div>
@@ -394,7 +513,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
                   {prev.effectiveHpCost < 0
                     ? `+${Math.abs(prev.effectiveHpCost)}HP`
                     : sk.category === 'D'
-                      ? `R+${prev.expectedRiskDelta}`
+                      ? `R+${leadAnalyzed ? prev.expectedRiskDelta : sk.riskDelta}`
                       : `-${prev.effectiveHpCost}HP`}
                 </span>
               </div>

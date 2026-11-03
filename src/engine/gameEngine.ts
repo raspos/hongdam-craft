@@ -5,7 +5,9 @@ import {
   Character3DAction,
   CompanyScaleId,
   EndingId,
+  ExecTraitId,
   GameState,
+  IndustryId,
   InternalCredibility,
   PRPlayerProfile,
   ResourcePointSnapshot,
@@ -20,6 +22,7 @@ import {
   COMPANY_SCALE_LIST,
   COMPANY_SCALES,
   EXEC_TRAIT_LIST,
+  EXEC_TRAITS,
   INDUSTRIES,
   INDUSTRY_LIST,
 } from '../data/companies';
@@ -135,7 +138,12 @@ export function createPlaceholderGameState(): GameState {
 
 export function initializeNewRun(
   profileInput: PRPlayerProfile,
-  options?: { seed?: number; forcedScale?: CompanyScaleId }
+  options?: {
+    seed?: number;
+    forcedScale?: CompanyScaleId;
+    forcedIndustry?: IndustryId;
+    forcedTrait?: ExecTraitId;
+  }
 ): GameState {
   const seed = (options?.seed ?? ((Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0)) || 987654321;
   const rng = new SeededRNG(seed);
@@ -152,11 +160,14 @@ export function initializeNewRun(
     rankEn: 'PR Team Lead',
   };
 
-  const scaleDef = options?.forcedScale
-    ? COMPANY_SCALES[options.forcedScale]
-    : rng.pick(COMPANY_SCALE_LIST);
-  const industryDef = rng.pick(INDUSTRY_LIST);
-  const traitDef = rng.pick(EXEC_TRAIT_LIST);
+  // Always advance RNG identically (3 picks) so Stage 1~6 RNG stream stays bit-for-bit aligned on Challenge URLs
+  const sampledScale = rng.pick(COMPANY_SCALE_LIST);
+  const sampledIndustry = rng.pick(INDUSTRY_LIST);
+  const sampledTrait = rng.pick(EXEC_TRAIT_LIST);
+
+  const scaleDef = options?.forcedScale ? COMPANY_SCALES[options.forcedScale] : sampledScale;
+  const industryDef = options?.forcedIndustry ? INDUSTRIES[options.forcedIndustry] : sampledIndustry;
+  const traitDef = options?.forcedTrait ? EXEC_TRAITS[options.forcedTrait] : sampledTrait;
 
   const company: AssignedCompany = {
     scale: scaleDef.id,

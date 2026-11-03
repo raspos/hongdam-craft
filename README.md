@@ -100,11 +100,97 @@ create policy "Anyone can read non-hidden posts"
 
 create policy "Anyone can insert posts"
   on public.hongdam_posts for insert
-  with check (char_length(content) between 3 and 350);
+  with check (
+    char_length(content) between 3 and 350
+    and char_length(author_nickname) between 1 and 20
+    and char_length(coalesce(company_label, '')) <= 60
+    and report_count = 0
+  );
 
-create policy "Anyone can update reactions and reports"
-  on public.hongdam_posts for update
-  using (true);
+-- 중복 신고 방지를 위한 세션·토큰 단위 신고 이력 테이블
+create table if not exists public.hongdam_post_reports (
+  post_id uuid not null references public.hongdam_posts(id) on delete cascade,
+  reporter_token text not null check (char_length(reporter_token) between 8 and 64),
+  created_at timestamptz not null default now(),
+  primary key (post_id, reporter_token)
+);
+alter table public.hongdam_post_reports enable row level security;
+
+-- 보안을 위해 익명 클라이언트의 직접 UPDATE 정책은 허용하지 않고,
+-- 공감 리액션(+1) 및 중복 방지 신고(+1)만 원자적으로 처리하는 security definer RPC 함수만 허용합니다.
+create or replace function public.increment_hongdam_reaction(p_post_id uuid, p_reaction_key text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_reaction_key not in ('soju', 'summon_reporter', 'call_chairman', 'comfort', 'congrats') then
+    raise exception 'Invalid reaction key';
+  end if;
+
+  update public.hongdam_posts
+  set reactions = jsonb_set(
+    reactions,
+    array[p_reaction_key],
+    to_jsonb(coalesce((reactions ->> p_reaction_key)::int, 0) + 1)
+  )
+  where id = p_post_id and report_count < 5;
+end;
+$$;
+
+create or replace function public.report_hongdam_post(p_post_id uuid, p_reporter_token text default 'legacy')
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  inserted_count int;
+begin
+  insert into public.hongdam_post_reports (post_id, reporter_token)
+  values (p_post_id, left(coalesce(nullif(trim(p_reporter_token), ''), 'legacy'), 64))
+  on conflict (post_id, reporter_token) do nothing;
+
+  get diagnostics inserted_count = row_count;
+  if inserted_count > 0 then
+    update public.hongdam_posts
+    set report_count = report_count + 1
+    where id = p_post_id;
+  end if;
+end;
+$$;
+
+-- 방문자 및 플레이 전환 퍼널 집계용 경량 카운터 테이블 & RPC (외부 무료 카운터 API 대체 가능)
+create table if not exists public.hongdam_counters (
+  counter_key text primary key check (char_length(counter_key) between 3 and 64),
+  value bigint not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table public.hongdam_counters enable row level security;
+create policy "Anyone can read counters" on public.hongdam_counters for select using (true);
+
+create or replace function public.increment_hongdam_counter(p_key text)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  next_val bigint;
+begin
+  insert into public.hongdam_counters (counter_key, value, updated_at)
+  values (p_key, 1, now())
+  on conflict (counter_key)
+  do update set value = public.hongdam_counters.value + 1, updated_at = now()
+  returning value into next_val;
+  return next_val;
+end;
+$$;
+
+grant execute on function public.increment_hongdam_reaction(uuid, text) to anon, authenticated;
+grant execute on function public.report_hongdam_post(uuid, text) to anon, authenticated;
+grant execute on function public.increment_hongdam_counter(text) to anon, authenticated;
 ```
 
 ---

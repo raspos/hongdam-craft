@@ -154,13 +154,11 @@ export function selectSkillByPolicy(
 
   const priorityQueues: Record<Exclude<StrategyPolicyId, 'random_baseline' | 'player_habit'>, string[]> = {
     transparent_remedy: [
-      !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
       !battle.buffs.whistleblowerVerified && battle.stage >= 2 ? 'B07_whistleblower_probe' : '',
-      'E19_exec_reform',
       'E17_apology_compensation',
+      'E19_exec_reform',
+      !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
       'C11_emergency_press_conf',
-      'C12_ceo_chairman_call',
-      'E18_factual_correction',
       'B08_crisis_tf',
       'A04_press_statement',
       'A02_coffee_lunch',
@@ -169,40 +167,61 @@ export function selectSkillByPolicy(
     fact_check: [
       !battle.journalists[0].isAnalyzed ? 'B05_reporter_profiling' : '',
       !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
-      !battle.buffs.whistleblowerVerified ? 'B07_whistleblower_probe' : '',
       'E18_factual_correction',
-      'A04_press_statement',
-      'C10_legal_agency_shield',
       'C11_emergency_press_conf',
+      'A04_press_statement',
+      !battle.buffs.whistleblowerVerified && battle.stage >= 3 ? 'B07_whistleblower_probe' : '',
+      'C10_legal_agency_shield',
       'B08_crisis_tf',
       'A02_coffee_lunch',
       'A01_phone_call',
     ],
     relationship: [
+      state.resources.hp <= 38 && battle.deadline >= 2 ? 'E20_day_off_recovery' : '',
       !battle.journalists[0].isAnalyzed ? 'B05_reporter_profiling' : '',
-      state.resources.hp >= 42 && evaluateSkillPreview(state, 'A03_bomb_shot').affinityRating !== 'backfire'
+      state.resources.hp >= 46 &&
+      (!battle.journalists[0].isAnalyzed ||
+        evaluateSkillPreview(state, 'A03_bomb_shot').affinityRating !== 'backfire')
         ? 'A03_bomb_shot'
         : '',
+      battle.journalists[0].stats.intimacy >= 58 &&
+      state.resources.risk <= 55 &&
+      (!battle.journalists[0].isAnalyzed ||
+        evaluateSkillPreview(state, 'D14_network_hold').affinityRating !== 'backfire')
+        ? 'D14_network_hold'
+        : '',
+      battle.journalists[0].stats.intimacy >= 54 ? 'C12_ceo_chairman_call' : '',
+      battle.journalists[0].stats.intimacy >= 54 ? 'C11_emergency_press_conf' : '',
       'A02_coffee_lunch',
-      'C11_emergency_press_conf',
-      'A01_phone_call',
+      battle.sameCategoryStreak >= 1 ? 'B08_crisis_tf' : '',
+      battle.pressure >= 55 ? 'E17_apology_compensation' : '',
       'A04_press_statement',
+      'A01_phone_call',
       'C09_emergency_budget',
     ],
     legal_defense: [
       !battle.buffs.legalShieldActive ? 'C10_legal_agency_shield' : '',
-      state.resources.risk <= 74 ? 'D15_legal_warning' : '',
+      state.resources.risk <= 70 ? 'D15_legal_warning' : '',
       !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
       'A04_press_statement',
       'E18_factual_correction',
-      'B07_whistleblower_probe',
       'A01_phone_call',
     ],
     big_budget: [
-      state.resources.risk <= 66 ? 'D16_all_out_blitz' : '',
-      state.resources.risk <= 70 ? 'D13_ad_sponsorship' : '',
+      !battle.journalists[0].isAnalyzed ? 'B05_reporter_profiling' : '',
+      state.resources.risk <= 52 &&
+      (!battle.journalists[0].isAnalyzed ||
+        evaluateSkillPreview(state, 'D16_all_out_blitz').affinityRating !== 'backfire')
+        ? 'D16_all_out_blitz'
+        : '',
+      state.resources.risk <= 58 &&
+      (!battle.journalists[0].isAnalyzed ||
+        evaluateSkillPreview(state, 'D13_ad_sponsorship').affinityRating !== 'backfire')
+        ? 'D13_ad_sponsorship'
+        : '',
       'C12_ceo_chairman_call',
       'C10_legal_agency_shield',
+      !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
       'C11_emergency_press_conf',
       'C09_emergency_budget',
       'A04_press_statement',

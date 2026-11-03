@@ -1,4 +1,5 @@
-import { COMPANY_SCALE_LIST } from '../src/data/companies';
+import { COMPANY_SCALE_LIST, COMPANY_SCALES } from '../src/data/companies';
+import { PAC_2023_MEDIA_SHARES, PAC_2024_CLAIM_TYPES, PAC_ANNUAL_TREND } from '../src/data/empiricalPressData';
 import { ENDINGS, PR_ARCHETYPES } from '../src/data/endings';
 import { SUDDEN_EVENTS } from '../src/data/events';
 import { JOURNALIST_ARCHETYPE_LIST, JOURNALIST_COUNTER_SKILLS } from '../src/data/journalists';
@@ -138,22 +139,62 @@ export async function runAllVerifications() {
   }
   console.log('  ✅ All 20 core skills executed with zero NaN, valid bounds, and exact telemetry.');
 
-  // 3. Startup (100 XP) & Chaebol (1000 XP) 6-Stage Clearability
-  console.log('3️⃣ Verifying Startup (100 XP) & Chaebol (1000 XP) 6-Stage Clearability...');
+  // 3. Multi-Strategy Balance Band Assertions (No Dominant >88% Strategy, No Dead <30% Strategy, No Difficulty Inversion)
+  console.log('3️⃣ Verifying Multi-Strategy Balance Bands, Startup vs Midsize Scaling, & Beginner Curve...');
   const startupMc = runMonteCarloSurvival({
     companyScale: 'startup',
-    experienceYears: 9,
+    experienceYears: 7,
     startStage: 1,
     strategyPolicy: 'transparent_remedy',
-    iterations: 200,
+    iterations: 300,
+    seed: 1001,
+  });
+  const midsizeTransMc = runMonteCarloSurvival({
+    companyScale: 'midsize',
+    experienceYears: 7,
+    startStage: 1,
+    strategyPolicy: 'transparent_remedy',
+    iterations: 300,
+    seed: 1001,
+  });
+  const midsizeFactMc = runMonteCarloSurvival({
+    companyScale: 'midsize',
+    experienceYears: 7,
+    startStage: 1,
+    strategyPolicy: 'fact_check',
+    iterations: 300,
+    seed: 1001,
+  });
+  const midsizeRelMc = runMonteCarloSurvival({
+    companyScale: 'midsize',
+    experienceYears: 7,
+    startStage: 1,
+    strategyPolicy: 'relationship',
+    iterations: 300,
+    seed: 1001,
+  });
+  const midsizeLegalMc = runMonteCarloSurvival({
+    companyScale: 'midsize',
+    experienceYears: 7,
+    startStage: 1,
+    strategyPolicy: 'legal_defense',
+    iterations: 300,
+    seed: 1001,
+  });
+  const midsizeRandomMc = runMonteCarloSurvival({
+    companyScale: 'midsize',
+    experienceYears: 7,
+    startStage: 1,
+    strategyPolicy: 'random_baseline',
+    iterations: 300,
     seed: 1001,
   });
   const chaebolMc = runMonteCarloSurvival({
     companyScale: 'chaebol',
-    experienceYears: 9,
+    experienceYears: 7,
     startStage: 1,
     strategyPolicy: 'transparent_remedy',
-    iterations: 200,
+    iterations: 300,
     seed: 1001,
   });
   const chaebolRecklessMc = runMonteCarloSurvival({
@@ -165,11 +206,42 @@ export async function runAllVerifications() {
     seed: 1001,
   });
 
-  assert(startupMc.anySurvivalVictoryRate >= 25, `Startup should be clearable with smart play (got ${startupMc.anySurvivalVictoryRate}%)`);
-  assert(chaebolMc.anySurvivalVictoryRate >= 30, `Chaebol should be clearable with smart play (got ${chaebolMc.anySurvivalVictoryRate}%)`);
-  assert(chaebolRecklessMc.riskExplodedRate > 0 || chaebolRecklessMc.anySurvivalVictoryRate < 98, 'Chaebol must still face real risk when reckless');
+  assert(
+    midsizeTransMc.anySurvivalVictoryRate >= 55 && midsizeTransMc.anySurvivalVictoryRate <= 88,
+    `Midsize transparent_remedy must stay within 55~88% target band (got ${midsizeTransMc.anySurvivalVictoryRate}%)`
+  );
+  assert(
+    midsizeFactMc.anySurvivalVictoryRate >= 55 && midsizeFactMc.anySurvivalVictoryRate <= 88,
+    `Midsize fact_check must stay within 55~88% target band (got ${midsizeFactMc.anySurvivalVictoryRate}%)`
+  );
+  assert(
+    midsizeRelMc.anySurvivalVictoryRate >= 32 && midsizeRelMc.anySurvivalVictoryRate <= 78,
+    `Midsize relationship strategy must remain viable in 32~78% band (got ${midsizeRelMc.anySurvivalVictoryRate}%)`
+  );
+  assert(
+    midsizeLegalMc.anySurvivalVictoryRate >= 32 && midsizeLegalMc.anySurvivalVictoryRate <= 78,
+    `Midsize legal_defense strategy must remain viable in 32~78% band (got ${midsizeLegalMc.anySurvivalVictoryRate}%)`
+  );
+  assert(
+    startupMc.anySurvivalVictoryRate >= 40 &&
+      startupMc.anySurvivalVictoryRate <= midsizeTransMc.anySurvivalVictoryRate + 5,
+    `Startup (${startupMc.anySurvivalVictoryRate}%) must be clearable (>=40%) without inverting easier than Midsize (${midsizeTransMc.anySurvivalVictoryRate}%)`
+  );
+  assert(
+    chaebolMc.anySurvivalVictoryRate >= 40 && chaebolMc.anySurvivalVictoryRate <= 85,
+    `Chaebol survival must stay in 40~85% band (got ${chaebolMc.anySurvivalVictoryRate}%)`
+  );
+  assert(
+    midsizeRandomMc.stageSurvivalRates[1].survivedRate >= 40,
+    `Beginner Stage 1-2 random_baseline survival must be >= 40% (got ${midsizeRandomMc.stageSurvivalRates[1].survivedRate}%)`
+  );
+  assert(
+    COMPANY_SCALES.startup.scoreMultiplier > 1.1 && COMPANY_SCALES.chaebol.scoreMultiplier > 1.1,
+    'High-difficulty scales (Startup & Chaebol) must award career score multipliers > 1.1x'
+  );
+  assert(chaebolRecklessMc.riskExplodedRate > 0 || chaebolRecklessMc.anySurvivalVictoryRate < 90, 'Chaebol must still face real risk when reckless');
   console.log(
-    `  ✅ Startup survival: ${startupMc.anySurvivalVictoryRate}% (VP/Boutique: ${startupMc.execPromotionRate}%) | Chaebol survival: ${chaebolMc.anySurvivalVictoryRate}%`
+    `  ✅ Balance bands verified -> Midsize [Transparent ${midsizeTransMc.anySurvivalVictoryRate}%, FactCheck ${midsizeFactMc.anySurvivalVictoryRate}%, Relation ${midsizeRelMc.anySurvivalVictoryRate}%, Legal ${midsizeLegalMc.anySurvivalVictoryRate}%] | Startup ${startupMc.anySurvivalVictoryRate}% | Chaebol ${chaebolMc.anySurvivalVictoryRate}% | Random S2 ${midsizeRandomMc.stageSurvivalRates[1].survivedRate}%`
   );
 
   // 4. All Required Endings & Lethal Warning Checks
@@ -188,7 +260,7 @@ export async function runAllVerifications() {
 
   // 4b. RISK = 100 Lobby Exposed + Lethal Warning
   let riskState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 88, forcedScale: 'chaebol' }), 5);
-  riskState.resources.risk = 82;
+  riskState.resources.risk = 86;
   const blitzPreview = evaluateSkillPreview(riskState, 'D16_all_out_blitz');
   assert(blitzPreview.lethalWarningType === 'risk', 'Skill pushing RISK >= 100 must trigger lethalWarningType === "risk"');
   riskState = playBattleTurn(riskState, 'D16_all_out_blitz');
@@ -365,6 +437,25 @@ export async function runAllVerifications() {
   const wiTurnOpts = getWhatIfSkillOptionsAtTurn(fullRun, 1, 0);
   assert(wiTurnOpts.length > 0 && wiTurnOpts.some((o) => o.usable), 'What-If turn options must identify usable skills');
 
-  console.log('  ✅ Counterfactual WHAT-IF, Monte Carlo N=1,000, and Data Lab calculators verified.');
+  // 9. Information Asymmetry (#05 Reveal), Stage-1 Trap Protection, Same-Seed Challenge, & Empirical PAC Data
+  assert(PR_SKILLS_BY_ID['D14_network_hold'].minStage >= 2, 'D14_network_hold must unlock at Stage 2+ so Stage 1 has zero self-destruct traps');
+  let fogState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 777777, forcedScale: 'large', forcedIndustry: 'bio' }), 1);
+  assert(fogState.stageBattle!.journalists[0].isAnalyzed === false, 'New Stage 1 journalist must start with isAnalyzed === false (Fog of War)');
+  fogState = playBattleTurn(fogState, 'B05_reporter_profiling');
+  assert(fogState.stageBattle!.journalists[0].isAnalyzed === true, 'Skill #05 (B05_reporter_profiling) must reveal journalist stats & affinities');
+
+  const chA = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 777777, forcedScale: 'large', forcedIndustry: 'bio' }), 1);
+  const chB = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 777777, forcedScale: 'large', forcedIndustry: 'bio' }), 1);
+  assert(
+    chA.stageBattle!.journalists[0].archetype === chB.stageBattle!.journalists[0].archetype &&
+      chA.stageBattle!.headlineKo === chB.stageBattle!.headlineKo,
+    'Same-Seed Friend Challenge must spawn identical company, reporter archetype, and headline'
+  );
+
+  const pac2024Sum = PAC_2024_CLAIM_TYPES.reduce((s, c) => s + c.cases2024, 0);
+  const pac2023MediaSum = PAC_2023_MEDIA_SHARES.reduce((s, m) => s + m.cases2023, 0);
+  assert(PAC_ANNUAL_TREND.length === 4 && pac2024Sum === 3937 && pac2023MediaSum === 4085, 'Empirical Press Arbitration Commission data totals must match official reports');
+
+  console.log('  ✅ Counterfactual WHAT-IF, Monte Carlo N=1,000, Fog-of-War (#05), Same-Seed Challenge, and PAC Empirical Data verified.');
   console.log(`\n🎉 ALL ${passed} ASSERTIONS PASSED (${failed} FAILED)!`);
 }

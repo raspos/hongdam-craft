@@ -4,6 +4,8 @@ import { PRESET_BAMBOO_POSTS } from './presetPosts';
 const DEMO_SANDBOX_POSTS_KEY = 'hongdam_demo_sandbox_posts_v2';
 const USER_REACTIONS_KEY = 'hongdam_bamboo_reactions_v2';
 const HIDDEN_POST_IDS_KEY = 'hongdam_bamboo_hidden_ids_v2';
+const REPORTED_POST_IDS_KEY = 'hongdam_bamboo_reported_ids_v2';
+const CLIENT_REPORTER_TOKEN_KEY = 'hongdam_bamboo_reporter_token_v1';
 const LAST_POST_TIMESTAMP_KEY = 'hongdam_bamboo_last_post_ts_v2';
 const CUSTOM_SUPABASE_URL_KEY = 'hongdam_supabase_url';
 const CUSTOM_SUPABASE_ANON_KEY = 'hongdam_supabase_anon_key';
@@ -222,13 +224,14 @@ export async function createBambooPost(input: {
   if (!check.ok) return check;
 
   const cleanContent = input.content.trim().replace(/[<>]/g, '');
-  const cleanNick = (input.authorNickname.trim() || '익명의 홍보팀장').replace(/[<>]/g, '');
+  const cleanNick = (input.authorNickname.trim() || '익명의 홍보팀장').replace(/[<>]/g, '').slice(0, 20);
+  const cleanCompany = input.companyLabel ? input.companyLabel.trim().replace(/[<>]/g, '').slice(0, 60) : undefined;
 
   const cfg = getSupabaseConfig();
   const basePost: BambooPost = {
     id: `demo_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     authorNickname: cleanNick,
-    companyLabel: input.companyLabel,
+    companyLabel: cleanCompany,
     endingBadgeKo: input.endingBadgeKo,
     endingBadgeEn: input.endingBadgeEn,
     archetypeBadgeKo: input.archetypeBadgeKo,
@@ -334,14 +337,17 @@ export async function toggleBambooReaction(
   const cfg = getSupabaseConfig();
   if (cfg && !post.isPresetSample) {
     try {
-      await fetch(`${cfg.url}/rest/v1/hongdam_posts?id=eq.${encodeURIComponent(post.id)}`, {
-        method: 'PATCH',
+      await fetch(`${cfg.url}/rest/v1/rpc/increment_hongdam_reaction`, {
+        method: 'POST',
         headers: {
           apikey: cfg.anonKey,
           Authorization: `Bearer ${cfg.anonKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ reactions: nextReactions }),
+        body: JSON.stringify({
+          p_post_id: post.id,
+          p_reaction_key: reaction,
+        }),
       });
     } catch {}
   }
@@ -349,19 +355,44 @@ export async function toggleBambooReaction(
   return true;
 }
 
+function getOrCreateReporterToken(): string {
+  try {
+    const existing = localStorage.getItem(CLIENT_REPORTER_TOKEN_KEY);
+    if (existing && existing.length >= 12) return existing;
+    const created = `rt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+    localStorage.setItem(CLIENT_REPORTER_TOKEN_KEY, created);
+    return created;
+  } catch {
+    return `rt_ephemeral_${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+
 export async function reportAndHidePost(post: BambooPost): Promise<void> {
   addHiddenPostId(post.id);
+
+  // Deduplicate reports per browser/client token
+  try {
+    const raw = JSON.parse(localStorage.getItem(REPORTED_POST_IDS_KEY) || '[]');
+    const reportedSet = new Set<string>(Array.isArray(raw) ? raw : []);
+    if (reportedSet.has(post.id)) return;
+    reportedSet.add(post.id);
+    localStorage.setItem(REPORTED_POST_IDS_KEY, JSON.stringify(Array.from(reportedSet)));
+  } catch {}
+
   const cfg = getSupabaseConfig();
   if (cfg && !post.isPresetSample && !post.isLocalDemoOnly) {
     try {
-      await fetch(`${cfg.url}/rest/v1/hongdam_posts?id=eq.${encodeURIComponent(post.id)}`, {
-        method: 'PATCH',
+      await fetch(`${cfg.url}/rest/v1/rpc/report_hongdam_post`, {
+        method: 'POST',
         headers: {
           apikey: cfg.anonKey,
           Authorization: `Bearer ${cfg.anonKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ report_count: (post.reportCount || 0) + 1 }),
+        body: JSON.stringify({
+          p_post_id: post.id,
+          p_reporter_token: getOrCreateReporterToken(),
+        }),
       });
     } catch {}
   }

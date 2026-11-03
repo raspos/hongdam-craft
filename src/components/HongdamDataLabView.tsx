@@ -8,10 +8,16 @@ import {
   Filter,
   Flame,
   RefreshCw,
+  Scale,
   Users,
   Zap,
 } from 'lucide-react';
 import { COMPANY_SCALE_LIST } from '../data/companies';
+import {
+  PAC_2023_MEDIA_SHARES,
+  PAC_2024_CLAIM_TYPES,
+  PAC_ANNUAL_TREND,
+} from '../data/empiricalPressData';
 import { JOURNALIST_ARCHETYPE_LIST, JOURNALIST_ARCHETYPES } from '../data/journalists';
 import { SKILL_CATEGORIES } from '../data/skills';
 import { STAGES } from '../data/stages';
@@ -39,7 +45,13 @@ interface HongdamDataLabViewProps {
   onOpenMethodology: () => void;
 }
 
-type LabTabId = 'A_journalists' | 'B_skills' | 'C_scales' | 'D_stages' | 'E_strategies';
+type LabTabId =
+  | 'A_journalists'
+  | 'B_skills'
+  | 'C_scales'
+  | 'D_stages'
+  | 'E_strategies'
+  | 'F_empirical';
 
 export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
   onBackToGame,
@@ -286,6 +298,12 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
             icon: Compass,
             ko: 'E. 6대 전략 생존곡선',
             en: 'E. 6 Strategy Curves',
+          },
+          {
+            id: 'F_empirical' as const,
+            icon: Scale,
+            ko: 'F. 현실 언론분쟁 실증 통계',
+            en: 'F. Real Press Dispute Data',
           },
         ].map((t) => {
           const Icon = t.icon;
@@ -1023,13 +1041,175 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
         </div>
       )}
 
+      {/* ==================== SECTION F: REAL-WORLD PRESS ARBITRATION STATISTICS ==================== */}
+      {activeTab === 'F_empirical' && (
+        <div className="space-y-4">
+          {/* Empirical Source Header */}
+          <div className="pixel-card p-4 sm:p-5 border-emerald-500/80 bg-gradient-to-r from-emerald-950/50 via-slate-900 to-slate-950 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="px-2.5 py-0.5 rounded bg-emerald-950 border border-emerald-400 font-pixel text-[11px] text-emerald-200 font-bold">
+                🏛️ {isEn ? 'OFFICIAL EMPIRICAL STATISTICS (PAC KOREA)' : '공식 실증 데이터 · 언론중재위원회 (pac.or.kr)'}
+              </span>
+              <span className="text-[11px] font-pixel text-amber-300">
+                {isEn
+                  ? '2021–2024 Annual Press Arbitration Reports'
+                  : '2021~2024년 언론조정중재 연간보고서 실측 통계'}
+              </span>
+            </div>
+            <h3 className="font-pixel text-base sm:text-lg text-white font-bold">
+              {isEn
+                ? 'Real-World Press Disputes vs. <HONGDAM CRAFT> Virtual Simulation'
+                : '현실에서는 기사를 어떻게 다투는가 vs 〈홍담 크래프트〉 가상 실험 비교'}
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {isEn
+                ? 'Tabs A–E analyze probabilities inside our virtual game engine. Tab F presents official real-world press dispute records from the Press Arbitration Commission of Korea so readers can compare real media remedies against in-game PR choices.'
+                : '탭 A~E가 게임 내부 수식에서 도출된 가상 시뮬레이션 수치라면, 탭 F는 실제 대한민국 언론분쟁 현장에서 접수·처리된 언론중재위원회 공식 통계입니다. 현실의 정정·반론·손해배상 비중과 게임 속 홍보 스킬 설계를 직접 대조해 보세요.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Left: 2021-2024 Annual Dispute Volume & Relief Rate */}
+            <div className="lg:col-span-6 pixel-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="font-pixel text-sm text-emerald-300 font-bold">
+                  {isEn
+                    ? '1. Annual Press Arbitration Claims & Relief Rate (2021–2024)'
+                    : '1. 연도별 언론조정 신청 건수 및 피해구제율 (2021~2024)'}
+                </div>
+                <span className="text-[10px] font-pixel text-slate-400">단위: 건 / %</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {PAC_ANNUAL_TREND.map((row) => {
+                  const widthPct = Math.round((row.totalClaims / 4500) * 100);
+                  return (
+                    <div key={row.year} className="pixel-slot p-3 space-y-1.5">
+                      <div className="flex items-center justify-between font-pixel text-xs">
+                        <span className="text-white font-bold">{row.year}년</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-amber-300 font-bold">
+                            {row.totalClaims.toLocaleString()}
+                            {isEn ? ' claims' : '건'}
+                          </span>
+                          <span className="text-emerald-300">
+                            {isEn ? `Relief ${row.reliefRatePct}%` : `피해구제율 ${row.reliefRatePct}%`}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full h-3 bg-slate-950 rounded overflow-hidden border border-slate-800">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-sky-400"
+                          style={{ width: `${widthPct}%` }}
+                        />
+                      </div>
+                      <div className="text-[11px] text-slate-400 flex justify-between font-pixel">
+                        <span>
+                          {isEn
+                            ? `Online Media Share: ${row.onlineMediaSharePct}%`
+                            : `인터넷 기반 매체 비중: ${row.onlineMediaSharePct}%`}
+                        </span>
+                        <span className="text-slate-500">언론중재위 연간보고서</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Media Outlet Share (2023 Official Breakdown) */}
+              <div className="bg-slate-950/90 border border-slate-800 rounded-lg p-3 space-y-2">
+                <div className="font-pixel text-xs text-rose-300 font-bold">
+                  {isEn
+                    ? 'Media Type Share of Disputes (4,085 total claims)'
+                    : '매체 유형별 분쟁 집중도 (인터넷 매체·포털이 73% 이상 차지)'}
+                </div>
+                <div className="space-y-1.5">
+                  {PAC_2023_MEDIA_SHARES.map((m) => (
+                    <div key={m.nameEn} className="text-[11px]">
+                      <div className="flex justify-between font-pixel text-slate-300 mb-0.5">
+                        <span>{isEn ? m.nameEn : m.nameKo}</span>
+                        <span>
+                          <b>{m.sharePct}%</b> ({m.cases2023.toLocaleString()}건)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-900 rounded overflow-hidden">
+                        <div
+                          className="h-full rounded"
+                          style={{ width: `${m.sharePct}%`, backgroundColor: m.color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: 2024 Claim Type Breakdown & Direct Game Comparison */}
+            <div className="lg:col-span-6 pixel-card p-4 space-y-3">
+              <div className="font-pixel text-sm text-sky-300 font-bold">
+                {isEn
+                  ? '2. 2024 Claim Types (3,937 Cases) Mapped to Game Skills'
+                  : '2. 2024년 청구 유형별 실측 비중(3,937건)과 게임 스킬 대응 구조'}
+              </div>
+
+              <div className="space-y-2.5">
+                {PAC_2024_CLAIM_TYPES.map((ct) => (
+                  <div key={ct.id} className="pixel-slot p-3 space-y-1.5">
+                    <div className="flex items-center justify-between font-pixel text-xs">
+                      <span className="font-bold text-white">{isEn ? ct.nameEn : ct.nameKo}</span>
+                      <span className="font-bold" style={{ color: ct.color }}>
+                        {ct.sharePct}% ({ct.cases2024.toLocaleString()}
+                        {isEn ? ' cases' : '건'})
+                      </span>
+                    </div>
+                    <div className="w-full h-3 bg-slate-950 rounded overflow-hidden border border-slate-800">
+                      <div
+                        className="h-full"
+                        style={{ width: `${ct.sharePct}%`, backgroundColor: ct.color }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      🎮 {isEn ? ct.gameMappingEn : ct.gameMappingKo}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Side-by-Side Comparison: Reality vs Game */}
+              <div className="bg-indigo-950/40 border border-indigo-500/60 rounded-lg p-3.5 space-y-2 text-xs">
+                <div className="font-pixel text-amber-300 font-bold">
+                  🔍 {isEn ? 'Reality vs. Simulation — Key Takeaways' : '현실 실증 데이터 vs 게임 시뮬레이션 핵심 대조'}
+                </div>
+                <ul className="space-y-1.5 text-slate-200 leading-relaxed list-disc pl-4">
+                  <li>
+                    {isEn
+                      ? 'In reality, Factual Correction (46.3%) + Right-of-Reply Rebuttal (21.0%) make up 67.3% of formal remedies—matching why Fact-Check (#06) + Statement (#04) / Correction (#18) form a core pillar in-game.'
+                      : '현실 분쟁의 67.3%는 정정보도(46.3%)와 반론보도(21.0%) 청구입니다. 사실 확인(#06)과 객관적 정정(#18)·반론 해명(#04)이 위기관리의 정석인 이유가 실증 통계로도 확인됩니다.'}
+                  </li>
+                  <li>
+                    {isEn
+                      ? 'Over 80.9% of real disputes involve online newspapers & portals where speed outpaces verification—reflected in our Deadline Sprinter & SNS Viral Reporter archetypes.'
+                      : '현실 언론분쟁의 80.9%(2024년)가 인터넷 기반 매체에 집중되어 있습니다. 게임 속 [마감 질주형]·[SNS 바이럴형] 기자의 빠른 확산 압박은 이러한 디지털 보도 환경을 반영했습니다.'}
+                  </li>
+                  <li>
+                    {isEn
+                      ? 'Crucial Difference: PAC data only captures disputes AFTER publication, whereas corporate PR teams fight most battles BEFORE deadline—which <HONGDAM CRAFT> models as a hypothetical sandbox.'
+                      : '결정적 차이: 언론중재위 통계는 기사 출고 ‘이후’의 공식 분쟁만 포착하는 반면, 실제 홍보팀의 치열한 설득·팩트 검증은 출고 ‘이전’ 마감 시계 안에서 벌어집니다. 〈홍담 크래프트〉는 그 블랙박스 구간을 가상 규칙으로 실험합니다.'}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Data Honesty Footer */}
       <div className="bg-slate-950/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-400 font-pixel flex flex-wrap items-center justify-between gap-2">
         <span>
           📌{' '}
           {isEn
-            ? 'Methodological Note: All charts in HONGDAM DATA LAB compute directly from in-game mathematical rules and seeded Monte Carlo runs (Seed #20261103).'
-            : '데이터 정직성 고지: 홍담 데이터랩의 모든 통계는 임의 조작 수치나 현실 예측이 아닌, 게임 엔진 수식과 시드 난수(#20261103) 반복 시뮬레이션으로 직접 산출됩니다.'}
+            ? 'Methodological Note: Tabs A–E compute from in-game mathematical rules (Seed #20261103); Tab F cites official 2021–2024 Press Arbitration Commission (pac.or.kr) empirical reports.'
+            : '데이터 정직성 고지: 탭 A~E는 게임 엔진 수식·시드 난수(#20261103) 가상 실험 결과이며, 탭 F는 언론중재위원회(pac.or.kr) 2021~2024 공식 실측 통계입니다.'}
         </span>
         <span className="text-amber-300">HONGDAM CRAFT · HONGDAM DATA LAB</span>
       </div>

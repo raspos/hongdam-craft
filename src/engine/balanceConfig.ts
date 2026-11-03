@@ -12,6 +12,8 @@ export function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(n)));
 }
 
+export const MAX_COMPANY_REROLLS = 2;
+
 export const BALANCE = {
   INITIAL_HP: 100,
   MAX_HP: 100,
@@ -34,49 +36,49 @@ export const BALANCE = {
 
   // Emergency XP grants by company scale
   VP_SUPPORT_XP: {
-    startup: 26,
-    sme: 42,
-    midsize: 65,
-    large: 95,
-    chaebol: 140,
+    startup: 22,
+    sme: 38,
+    midsize: 62,
+    large: 96,
+    chaebol: 148,
   } as Record<CompanyScaleId, number>,
 
   OWNER_BANQUET_XP: {
-    startup: 45,
-    sme: 75,
-    midsize: 115,
+    startup: 38,
+    sme: 68,
+    midsize: 112,
     large: 175,
-    chaebol: 260,
+    chaebol: 265,
   } as Record<CompanyScaleId, number>,
 
-  // Diminishing returns when repeating the same skill category consecutively
-  SAME_CATEGORY_STREAK_PENALTY: [1.0, 0.92, 0.75, 0.6],
+  // Sharper diminishing returns when repeating the same skill category consecutively
+  SAME_CATEGORY_STREAK_PENALTY: [1.0, 0.80, 0.55, 0.38],
 
-  // Stage difficulty enemy counter multiplier
+  // Stage difficulty enemy counter multiplier: gentler onboarding in Stages 1–2, steeper late crisis in 4–6
   STAGE_ENEMY_SCALE: {
-    1: 0.86,
-    2: 1.0,
+    1: 0.66,
+    2: 0.80,
     3: 1.14,
-    4: 1.26,
-    5: 1.38,
-    6: 1.5,
+    4: 1.36,
+    5: 1.54,
+    6: 1.66,
   } as Record<StageNumber, number>,
 
   // Sudden event probability per turn
-  SUDDEN_EVENT_BASE_PROB: 0.42,
+  SUDDEN_EVENT_BASE_PROB: 0.44,
 };
 
 /**
  * Experience years modifier:
- * Rank is always '홍보팀장', while career years (1~25) shape skill proficiency,
- * initial journalist trust, and subtle stamina resilience.
+ * Rank is always '홍보팀장', while career years (1~25) trade off junior physical stamina
+ * against veteran persuasion polish—without creating an unfair beginner cliff.
  */
 export function getExperienceModifiers(years: number) {
   const y = clamp(years, 1, 25);
   return {
-    skillProficiencyBonus: Math.min(0.18, (y - 1) * 0.01), // +0% ~ +18% persuasion efficiency
-    initialTrustBonus: Math.min(12, Math.floor((y - 1) * 0.65)), // +0 ~ +12 initial reporter intimacy
-    eventFavorBonus: Math.min(0.12, (y - 1) * 0.006),
-    youthStaminaSave: y <= 4 ? 1 : 0, // Junior team leads recover/spend 1 less HP on footwork
+    skillProficiencyBonus: Math.min(0.10, (y - 1) * 0.0045), // +0% ~ +10% persuasion efficiency
+    initialTrustBonus: Math.min(7, Math.floor((y - 1) * 0.32)), // +0 ~ +7 initial reporter intimacy
+    eventFavorBonus: Math.min(0.08, (y - 1) * 0.0035),
+    youthStaminaSave: y <= 5 ? 2 : y <= 10 ? 1 : 0, // Junior PR leads spend less HP on field footwork
   };
 }
