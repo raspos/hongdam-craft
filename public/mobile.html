@@ -242,15 +242,15 @@
 
       <aside class="side-panel">
         <h2>📱 실제 스마트폰으로 접속하기</h2>
-        <p>PC와 스마트폰이 <strong>같은 Wi-Fi</strong>에 연결되어 있다면 아래 QR 코드 또는 주소로 직접 접속할 수 있습니다.</p>
+        <p id="qrDesc">PC와 스마트폰이 <strong>같은 Wi-Fi</strong>에 연결되어 있다면 아래 QR 코드 또는 주소로 직접 접속할 수 있습니다.</p>
         <div class="qr-box" id="qrWrap">
           <img id="qrImg" alt="모바일 접속 QR" />
         </div>
         <div>
-          <div style="font-size:11px;color:#cbd5e1;margin-bottom:4px;font-weight:700;">Wi-Fi 로컬 접속 주소</div>
-          <div class="url-chip" id="lanUrl">http://10.192.15.62:5173/</div>
+          <div id="urlLabel" style="font-size:11px;color:#cbd5e1;margin-bottom:4px;font-weight:700;">모바일 접속 주소</div>
+          <div class="url-chip" id="lanUrl">https://raspos.github.io/hongdam-craft/</div>
         </div>
-        <div id="tsBlock">
+        <div id="tsBlock" style="display:none;">
           <div style="font-size:11px;color:#cbd5e1;margin-bottom:4px;font-weight:700;">Tailscale 연결 시</div>
           <div class="url-chip">http://100.70.166.78:5173/</div>
         </div>
@@ -273,10 +273,18 @@
       }
 
       // Setup QR URL
-      const lanTarget = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const lanTarget = isLocal
         ? `http://10.192.15.62:${window.location.port || '5173'}/`
         : new URL('./', window.location.href).href;
       document.getElementById('lanUrl').textContent = lanTarget;
+      if (isLocal) {
+        document.getElementById('urlLabel').textContent = 'Wi-Fi 로컬 접속 주소';
+        document.getElementById('tsBlock').style.display = 'block';
+      } else {
+        document.getElementById('qrDesc').innerHTML = '스마트폰 카메라로 아래 <strong>QR 코드</strong>를 스캔하면 실제 기기 전체 화면으로 바로 플레이할 수 있습니다.';
+        document.getElementById('urlLabel').textContent = '공식 배포 주소';
+      }
       const qrImg = document.getElementById('qrImg');
       qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(lanTarget)}`;
       qrImg.onerror = () => {

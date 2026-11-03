@@ -63,8 +63,8 @@ export const DangerConfirmModal: React.FC<DangerConfirmModalProps> = ({
             </div>
             <p className="text-slate-300">
               {isEn
-                ? 'Are you sure you want to take this risk anyway, or cancel and select a recovery/safe skill (e.g., Skill #20 Emergency Rest or #09 Emergency PR Budget)?'
-                : '다른 안전한 스킬(예: #20 긴급 휴식, #09 홍보실장 긴급예산 등)을 선택할 수 있습니다. 그래도 강행하시겠습니까?'}
+                ? 'Are you sure you want to take this risk anyway, or cancel and select a recovery/safe skill (e.g., Skill #20 Emergency Rest or #09 Request VP Budget)?'
+                : '다른 안전한 스킬(예: #20 긴급 휴식, #09 홍보실장 지원 요청 등)을 선택할 수 있습니다. 그래도 강행하시겠습니까?'}
             </p>
           </div>
         ) : (
