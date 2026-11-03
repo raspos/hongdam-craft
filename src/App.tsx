@@ -29,6 +29,7 @@ import { ShareCardModal } from './components/ShareCardModal';
 import { SkillInventoryPanel } from './components/SkillInventoryPanel';
 import { StageReportModal } from './components/StageReportModal';
 import { SurvivalSimulatorModal } from './components/SurvivalSimulatorModal';
+import { VisitorCounter } from './components/VisitorCounter';
 import { WhatIfModal } from './components/WhatIfModal';
 
 const BattleArenaCanvas = React.lazy(() => import('./components/3d/BattleArenaCanvas'));
@@ -359,27 +360,43 @@ const HongdamAppInner: React.FC = () => {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/90 bg-slate-950/90 py-3 px-4 mt-8 text-[11px] text-slate-400 font-pixel">
-        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>
-            <span className="text-amber-300 font-bold">CRAFT UNIVERSE</span> ·{' '}
+      <footer className="w-full bg-slate-950 border-t border-slate-900 py-6 px-4 mt-8 text-center text-xs text-slate-400 font-pixel space-y-3">
+        {/* Global Public Visitor Counter */}
+        <div className="flex justify-center pb-1">
+          <VisitorCounter />
+        </div>
+
+        <div>
+          <p className="font-bold text-slate-300">
             {isEn
-              ? 'HONGDAM CRAFT (A Data Journalism-Inspired Interactive Simulation) · Fictional Characters & Virtual Rules Only.'
-              : '홍담 크래프트 (데이터저널리즘형 가상 시뮬레이션 인터랙티브 프로젝트) · 등장 기업·기자는 모두 가상 설정이며 실제 현실 예측이 아닙니다.'}
-          </div>
-          <div className="flex items-center gap-3 text-slate-500">
-            {finishedCount > 0 && (
-              <span>
+              ? 'HONGDAM CRAFT — The PR Survival Game'
+              : '홍담 크래프트 (HONGDAM CRAFT) — 기사 막기 전쟁'}
+          </p>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {isEn
+              ? 'A Data Journalism-Inspired Interactive Simulation · Fictional Characters & Virtual Rules Only.'
+              : '데이터저널리즘형 가상 시뮬레이션 인터랙티브 프로젝트 · 등장 기업·기자는 모두 가상 설정이며 실제 현실 예측이 아닙니다.'}
+          </p>
+        </div>
+
+        <div className="pt-0.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          <span>
+            © <span className="text-amber-300 font-bold">프로딴짓러</span>. All rights reserved.
+          </span>
+          <span className="text-slate-700">|</span>
+          <span className="text-slate-500 italic">
+            {isEn
+              ? '“The headlines keep coming. The budget keeps shrinking. And the PR chief only has one life.”'
+              : '“기사는 쏟아지고, 예산은 바닥나고, 팀장 목숨은 하나다.”'}
+          </span>
+          {finishedCount > 0 && (
+            <>
+              <span className="text-slate-700">|</span>
+              <span className="text-slate-400">
                 {isEn ? `Local Completed Runs: ${finishedCount}` : `내 브라우저 완주 기록: ${finishedCount}회`}
               </span>
-            )}
-            <a
-              href="https://raspos.github.io/personnel-craft/"
-              className="text-sky-400 hover:underline"
-            >
-              {isEn ? '→ Play Personnel Craft' : '→ 자매작 〈인사 크래프트〉 바로가기'}
-            </a>
-          </div>
+            </>
+          )}
         </div>
       </footer>
 

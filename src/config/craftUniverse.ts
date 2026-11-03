@@ -7,6 +7,8 @@ export interface CraftUniverseNavLink {
   url: string;
 }
 
+export const SHOW_CRAFT_UNIVERSE = false;
+
 export const CRAFT_UNIVERSE_BRAND = {
   title: 'CRAFT UNIVERSE',
   subtitleKo: '언론계 생존 시뮬레이션 유니버스',

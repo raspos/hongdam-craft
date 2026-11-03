@@ -1031,7 +1031,7 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
             ? 'Methodological Note: All charts in HONGDAM DATA LAB compute directly from in-game mathematical rules and seeded Monte Carlo runs (Seed #20261103).'
             : '데이터 정직성 고지: 홍담 데이터랩의 모든 통계는 임의 조작 수치나 현실 예측이 아닌, 게임 엔진 수식과 시드 난수(#20261103) 반복 시뮬레이션으로 직접 산출됩니다.'}
         </span>
-        <span className="text-amber-300">CRAFT UNIVERSE · HONGDAM DATA LAB</span>
+        <span className="text-amber-300">HONGDAM CRAFT · HONGDAM DATA LAB</span>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { CRAFT_UNIVERSE_BRAND, CRAFT_UNIVERSE_LINKS } from '../config/craftUniverse';
+import { CRAFT_UNIVERSE_BRAND, CRAFT_UNIVERSE_LINKS, SHOW_CRAFT_UNIVERSE } from '../config/craftUniverse';
 import { useLanguage } from '../i18n/LanguageContext';
 import { sound } from '../utils/sound';
 
@@ -50,9 +50,11 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-pixel text-[11px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-amber-300 font-bold tracking-wider">
-                  {CRAFT_UNIVERSE_BRAND.title}
-                </span>
+                {SHOW_CRAFT_UNIVERSE && (
+                  <span className="font-pixel text-[11px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-amber-300 font-bold tracking-wider">
+                    {CRAFT_UNIVERSE_BRAND.title}
+                  </span>
+                )}
                 <h1 className="font-pixel text-sm sm:text-base text-white font-extrabold">
                   {isEn ? 'HONGDAM CRAFT' : '홍담 크래프트'}
                 </h1>
@@ -61,7 +63,11 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 hidden sm:block">
-                {isEn ? CRAFT_UNIVERSE_BRAND.subtitleEn : CRAFT_UNIVERSE_BRAND.subtitleKo} ·{' '}
+                {SHOW_CRAFT_UNIVERSE ? (
+                  <>
+                    {isEn ? CRAFT_UNIVERSE_BRAND.subtitleEn : CRAFT_UNIVERSE_BRAND.subtitleKo} ·{' '}
+                  </>
+                ) : null}
                 <span className="text-sky-400">
                   {isEn ? CRAFT_UNIVERSE_BRAND.genreBadgeEn : CRAFT_UNIVERSE_BRAND.genreBadgeKo}
                 </span>
@@ -108,12 +114,12 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
           </div>
         </div>
 
-        {/* Center: Unified CRAFT UNIVERSE Series Menu */}
+        {/* Center: Main Navigation */}
         <nav
-          aria-label="CRAFT UNIVERSE Navigation"
+          aria-label="Main Navigation"
           className="flex items-center gap-1 bg-slate-900/95 p-1 rounded-lg border border-slate-800 overflow-x-auto max-w-full"
         >
-          {CRAFT_UNIVERSE_LINKS.map((item) => {
+          {CRAFT_UNIVERSE_LINKS.filter((item) => SHOW_CRAFT_UNIVERSE || item.id !== 'personnel-craft').map((item) => {
             if (item.id === 'personnel-craft') {
               const targetUrl = `${item.url}?lang=${language}`;
               return (

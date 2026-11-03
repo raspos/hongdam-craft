@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Download, Share2, X } from 'lucide-react';
-import { CRAFT_UNIVERSE_BRAND } from '../config/craftUniverse';
 import { COMPANY_SCALES, INDUSTRIES } from '../data/companies';
 import { ENDINGS, PR_ARCHETYPES } from '../data/endings';
 import { PR_SKILLS_BY_ID } from '../data/skills';
@@ -62,12 +61,12 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ state, onClose }
     ctx.lineWidth = 8;
     ctx.strokeRect(18, 18, 1164, 594);
 
-    // 13. CRAFT UNIVERSE Logo Badge + 1. Game Title
+    // 13. Top Badge + 1. Game Title
     ctx.fillStyle = '#fbbf24';
-    ctx.fillRect(48, 44, 235, 36);
+    ctx.fillRect(48, 44, 215, 36);
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 18px monospace, sans-serif';
-    ctx.fillText(`★ ${CRAFT_UNIVERSE_BRAND.title}`, 62, 68);
+    ctx.fillText('★ PR SURVIVAL', 64, 68);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 28px sans-serif';
@@ -75,7 +74,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ state, onClose }
       isEn
         ? 'HONGDAM CRAFT — The PR Survival Game'
         : '홍담 크래프트 — 기사 막기 전쟁',
-      300,
+      280,
       70
     );
 
@@ -238,8 +237,8 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ state, onClose }
     ctx.textAlign = 'right';
     ctx.fillText(
       isEn
-        ? 'CRAFT UNIVERSE · Personnel Craft × Hongdam Craft'
-        : '“기사는 쏟아지고, 예산은 바닥나고, 팀장 목숨은 하나다.”',
+        ? '© 프로딴짓러 · The PR Survival Game'
+        : '© 프로딴짓러 · “기사는 쏟아지고, 예산은 바닥나고, 팀장 목숨은 하나다.”',
       1152,
       584
     );
