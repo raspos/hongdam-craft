@@ -1,0 +1,156 @@
+@import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2106@1.1/DungGeunMo.css');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-pixel: 'DungGeunMo', monospace;
+    --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #020617;
+    color: #f8fafc;
+    user-select: none;
+    overflow-x: hidden;
+  }
+}
+
+.font-pixel {
+  font-family: 'DungGeunMo', monospace;
+  letter-spacing: -0.02em;
+}
+
+.pixel-card {
+  background: #0f172a;
+  border: 4px solid #020617;
+  border-radius: 6px;
+  box-shadow: 4px 4px 0px #000000, inset 1px 1px 0px rgba(255, 255, 255, 0.14);
+}
+
+.pixel-slot {
+  background: #090d16;
+  border: 3px solid #1e293b;
+  border-radius: 4px;
+  box-shadow: inset 2px 2px 0px #000000, 1px 1px 0px rgba(255, 255, 255, 0.08);
+}
+
+.pixel-slot-active {
+  background: #172554;
+  border: 3px solid #fbbf24;
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.45), inset 1px 1px 0px rgba(255, 255, 255, 0.25);
+}
+
+.pixel-btn-mc {
+  font-family: 'DungGeunMo', monospace;
+  background: #334155;
+  border-top: 3px solid #64748b;
+  border-left: 3px solid #64748b;
+  border-right: 3px solid #0f172a;
+  border-bottom: 3px solid #0f172a;
+  box-shadow: 3px 3px 0px #000000;
+  transition: all 0.06s ease;
+  cursor: pointer;
+}
+
+.pixel-btn-mc:hover:not(:disabled) {
+  background: #475569;
+}
+
+.pixel-btn-mc:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.pixel-btn-mc:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pixel-btn-mc-primary {
+  background: #dc2626;
+  border-top: 3px solid #fca5a5;
+  border-left: 3px solid #fca5a5;
+  border-right: 3px solid #7f1d1d;
+  border-bottom: 3px solid #7f1d1d;
+  color: #ffffff;
+}
+
+.pixel-btn-mc-primary:hover:not(:disabled) {
+  background: #ef4444;
+}
+
+.pixel-btn-mc-emerald {
+  background: #15803d;
+  border-top: 3px solid #86efac;
+  border-left: 3px solid #86efac;
+  border-right: 3px solid #14532d;
+  border-bottom: 3px solid #14532d;
+  color: #ffffff;
+}
+
+.pixel-btn-mc-emerald:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.pixel-btn-mc-amber {
+  background: #d97706;
+  border-top: 3px solid #fde047;
+  border-left: 3px solid #fde047;
+  border-right: 3px solid #78350f;
+  border-bottom: 3px solid #78350f;
+  color: #ffffff;
+}
+
+.pixel-btn-mc-amber:hover:not(:disabled) {
+  background: #f59e0b;
+}
+
+.voxel-input {
+  background: #020617;
+  border: 2px solid #334155;
+  color: #f1f5f9;
+  border-radius: 6px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  user-select: text;
+}
+
+.voxel-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.newspaper-banner {
+  background: #fefce8;
+  color: #1c1917;
+  border: 3px solid #1c1917;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.65); }
+  50% { box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.35); }
+}
+
+.danger-pulse {
+  animation: pulseWarning 1.6s infinite;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
