@@ -20,7 +20,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
   const { isEn } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | 'ALL'>('A');
   const [focusedSkillId, setFocusedSkillId] = useState<string>('A01_phone_call');
-  const [showUnlockedOnly, setShowUnlockedOnly] = useState(true);
+  const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
 
   const previews = useMemo(() => {
     const map: Record<string, SkillExecutionPreview> = {};
@@ -56,9 +56,13 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
       onRequestLethalConfirm(skillId, prev);
       return;
     }
-    if (skillId === 'A01_phone_call' || skillId === 'C26_chairman_call') {
+    if (
+      skillId === 'A01_phone_call' ||
+      skillId === 'C09_emergency_budget' ||
+      skillId === 'C12_ceo_chairman_call'
+    ) {
       sound.playPhoneRing();
-    } else if (skillId === 'C23_emergency_press_conf') {
+    } else if (skillId === 'C11_emergency_press_conf' || skillId === 'E19_exec_reform') {
       sound.playCameraFlash();
     } else {
       sound.playClick();
@@ -109,7 +113,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
         <div className="font-pixel text-xs sm:text-sm text-amber-300 font-bold flex items-center gap-1.5">
           <Zap className="w-4 h-4 text-amber-400" />
           <span>
-            {isEn ? 'PR SKILL INVENTORY (40 SKILLS)' : '홍보 대응 스킬 인벤토리 (총 40종)'}
+            {isEn ? 'PR SKILL DECK (20 CORE SKILLS · 4 PER TAB)' : '홍보 대응 핵심 스킬 (총 20종 · 계열당 4종)'}
           </span>
         </div>
 
@@ -120,7 +124,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
             onChange={(e) => setShowUnlockedOnly(e.target.checked)}
             className="accent-amber-500"
           />
-          <span>{isEn ? 'Unlocked Only' : '현재 해금 스킬만'}</span>
+          <span>{isEn ? 'Unlocked Only' : '해금 스킬만'}</span>
         </label>
       </div>
 
@@ -142,7 +146,7 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
                     : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
                 }`}
               >
-                {isEn ? 'All (40)' : '전체(40)'}
+                {isEn ? 'All (20)' : '전체(20)'}
               </button>
             );
           }
@@ -314,8 +318,12 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
         </div>
       )}
 
-      {/* Minecraft-Style Skill Slot Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[290px] overflow-y-auto pr-1">
+      {/* Minecraft-Style 2x2 / 1x4 Skill Slot Grid (Zero scroll per category!) */}
+      <div
+        className={`grid grid-cols-2 sm:grid-cols-4 gap-2 ${
+          selectedCategory === 'ALL' ? 'max-h-[290px] overflow-y-auto pr-1' : ''
+        }`}
+      >
         {filteredSkills.map((sk) => {
           const prev = previews[sk.id];
           const isSelected = focusedSkill.id === sk.id;

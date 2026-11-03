@@ -41,7 +41,7 @@ import {
 import { SeededRNG } from './rng';
 import { evaluateSkillPreview, executePlayerSkill } from './skillEngine';
 
-export const GAME_STATE_VERSION = 2;
+export const GAME_STATE_VERSION = 3;
 
 export const DEFAULT_PLAYER_PROFILE: PRPlayerProfile = {
   name: '김홍담',

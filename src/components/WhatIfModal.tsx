@@ -55,7 +55,7 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({ state, initialStage, o
 
   const [altSkillId, setAltSkillId] = useState<string>(() => {
     const seq0 = snap?.chosenSkillSequence[0];
-    const fallback = unlockedForStage.find((s) => s.id !== seq0)?.id || 'B14_internal_factcheck';
+    const fallback = unlockedForStage.find((s) => s.id !== seq0)?.id || 'B06_internal_factcheck';
     return fallback;
   });
 

@@ -20,7 +20,7 @@ export function computeEffectiveXpCost(
 ): number {
   if (skill.xpCost <= 0) return 0;
   let cost = skill.xpCost * (skill.scalesWithCompany ? company.xpCostMultiplier : 1.0);
-  if (company.execTrait === 'legal_first' && skill.id === 'C20_legal_team') {
+  if (company.execTrait === 'legal_first' && skill.id === 'C10_legal_agency_shield') {
     cost *= 0.7;
   }
   if (buffs && buffs.tfTurnsLeft > 0 && (skill.category === 'C' || skill.category === 'E')) {
@@ -39,7 +39,7 @@ export function computeEffectiveHpCost(
   const expMod = getExperienceModifiers(experienceYears);
   let cost = skill.hpCost;
   if (buffs?.hangoverNextTurn) cost += 5;
-  if (company.execTrait === 'legal_first' && skill.id === 'E35_official_apology') cost += 3;
+  if (company.execTrait === 'legal_first' && skill.id === 'E17_apology_compensation') cost += 3;
   if (skill.category === 'A') cost = Math.max(1, cost - expMod.youthStaminaSave);
   return Math.round(cost);
 }
@@ -128,16 +128,14 @@ export function evaluateSkillPreview(state: GameState, skillId: string): SkillEx
   let flatPressureBonus = 0;
   if (
     battle.buffs.factChecked &&
-    (skill.id === 'A07_press_statement' ||
-      skill.id === 'A10_extra_materials' ||
-      skill.id === 'C23_emergency_press_conf')
+    (skill.id === 'A04_press_statement' || skill.id === 'C11_emergency_press_conf')
   ) {
     pMult *= 1.45;
     if (affinityRating === 'neutral') affinityRating = 'good';
   }
   if (
     (battle.buffs.factChecked || battle.buffs.disclosureAudited) &&
-    skill.id === 'E36_correct_misinfo'
+    skill.id === 'E18_factual_correction'
   ) {
     flatPressureBonus -= 10;
     if (affinityRating === 'neutral') affinityRating = 'good';
@@ -249,7 +247,7 @@ export function executePlayerSkill(
   // Apply company executive traits
   if (
     state.company.execTrait === 'data_driven' &&
-    (skill.mechanic === 'verify_facts' || skill.mechanic === 'audit_disclosure' || skill.mechanic === 'factual_correction')
+    (skill.mechanic === 'verify_facts' || skill.mechanic === 'factual_correction')
   ) {
     pressureDelta = Math.round(pressureDelta * 1.18);
   }
@@ -259,7 +257,7 @@ export function executePlayerSkill(
   }
   if (
     state.company.execTrait === 'succession_era' &&
-    (skill.mechanic === 'convene_tf' || skill.mechanic === 'hire_consultant')
+    (skill.mechanic === 'convene_tf' || skill.mechanic === 'legal_shield')
   ) {
     pressureDelta = Math.round(pressureDelta * 1.2);
   }
@@ -289,110 +287,87 @@ export function executePlayerSkill(
     riskDelta += aff.riskExtra;
   }
 
-  // Special Mechanic Resolution (unique behavior per skill!)
+  // Special Mechanic Resolution (consolidated 20-skill mechanics!)
   let extraNoteKo = '';
   let extraNoteEn = '';
 
   switch (skill.mechanic) {
     case 'reveal_stats': {
+      // Consolidates Reporter Profiling + Next-Move Probe + Desk Deadline Check (+1 turn once/stage)
       battle.journalists.forEach((j) => {
         j.isAnalyzed = true;
-      });
-      extraNoteKo = '기자 능력치와 상성이 완전히 분석되었습니다!';
-      extraNoteEn = 'All journalist stats & affinities unlocked!';
-      break;
-    }
-    case 'probe_intent': {
-      battle.journalists.forEach((j) => {
         j.intentProbed = true;
-        j.stats.evidenceLevel = clamp(j.stats.evidenceLevel - 10, 10, 99);
+        j.stats.evidenceLevel = clamp(j.stats.evidenceLevel - 8, 10, 99);
       });
-      extraNoteKo = '기자의 다음 반격 의도를 파악하고 증거 예봉을 꺾었습니다!';
-      extraNoteEn = 'Revealed reporter’s next move and blunted evidence (-10)!';
-      break;
-    }
-    case 'stabilize_deadline': {
       if (!buffs.deadlineChecked) {
         buffs.deadlineChecked = true;
         deadlineDelta = 1;
-        extraNoteKo = '마감 판갈이 시간을 확인해 행동 기회(+1턴)를 추가 확보했습니다!';
-        extraNoteEn = 'Verified edition lock—gained +1 extra DEADLINE turn!';
+        extraNoteKo = '기자 능력치·반격 의도 완전 분석 + 마감 판갈이 확인으로 행동 기회(+1턴)까지 확보했습니다!';
+        extraNoteEn = 'Revealed all journalist stats & next move, cut Evidence (-8), and gained +1 DEADLINE turn!';
       } else {
-        extraNoteKo = '마감 일정을 재점검해 압박을 소폭 낮췄습니다.';
-        extraNoteEn = 'Re-checked edition schedule.';
+        extraNoteKo = '기자 성향·다음 반격 스킬을 간파하고 취재 예봉(증거 -8)을 낮췄습니다!';
+        extraNoteEn = 'Analyzed journalist stats & next move while blunting Evidence (-8)!';
       }
       break;
     }
     case 'verify_facts': {
+      // Consolidates Internal Fact-Check + Official Disclosure Audit
       buffs.factChecked = true;
-      buffs.dataMismatchDebuff = false;
-      if (memRec) memRec.accurateDataGiven += 1;
-      extraNoteKo = '[사내 팩트 검증됨] 달성! 이후 해명·정정·기자회견 효율이 급증합니다.';
-      extraNoteEn = '[Fact-Verified] active! Statements, corrections & pressers gain huge power.';
-      break;
-    }
-    case 'audit_disclosure': {
       buffs.disclosureAudited = true;
-      buffs.factChecked = true;
       buffs.dataMismatchDebuff = false;
       if (memRec) memRec.accurateDataGiven += 1;
       if (battle.stage === 3 || battle.stage === 6) {
-        pressureDelta -= 8;
+        pressureDelta -= 6;
       }
-      extraNoteKo = '전자공시 주석과 내부 문건의 회계 차이를 정밀 소명했습니다!';
-      extraNoteEn = 'Reconciled official filings against leaked documents!';
+      extraNoteKo = '[사내 팩트 검증 + 공시 대조 완료]! 이후 해명·정정·기자회견 효율이 폭발적으로 상승합니다.';
+      extraNoteEn = '[Fact-Verified & Audited]! Statements, corrections & pressers gain massive synergy.';
       break;
     }
     case 'verify_whistleblower': {
+      // Consolidates Leak Inquiry + 2-Turn Sentiment Shield
       buffs.whistleblowerVerified = true;
+      buffs.sentimentShieldTurns = 2;
       battle.journalists.forEach((j) => {
-        j.stats.evidenceLevel = clamp(j.stats.evidenceLevel - 14, 10, 99);
+        j.stats.evidenceLevel = clamp(j.stats.evidenceLevel - 12, 10, 99);
       });
       if (battle.internalCredibility === 'solid_company') {
-        pressureDelta -= 10;
-        extraNoteKo = '조사 결과 제보 상당 부분이 오해임이 밝혀져 압박이 크게 감소했습니다!';
-        extraNoteEn = 'Inquiry showed much of the tip-off was exaggerated—pressure drops sharply!';
+        pressureDelta -= 8;
+        extraNoteKo = '진상 조사로 제보의 과장을 밝혀내고 여론 방어막(2턴)을 세워 압박을 크게 낮췄습니다!';
+        extraNoteEn = 'Inquiry exposed exaggerations & deployed a 2-turn sentiment shield!';
       } else {
-        extraNoteKo = '내부 문제점을 정확히 파악했습니다! 이제 사과·보상·개선 스킬 효율이 증폭됩니다.';
-        extraNoteEn = 'Pinpointed internal faults! Apology, compensation & reform skills are now boosted.';
+        extraNoteKo = '내부 원인을 파악하고 여론 방어막(2턴)을 가동했습니다! 사과·개혁 스킬 위력이 증폭됩니다.';
+        extraNoteEn = 'Pinpointed internal faults + 2-turn Rep shield active! Apology & reform skills boosted.';
       }
       break;
     }
     case 'convene_tf': {
       buffs.tfTurnsLeft = 3;
-      extraNoteKo = '위기대응 TF 가동! 3턴간 기자 반격 압박이 30% 경감됩니다.';
-      extraNoteEn = 'Crisis TF active! Incoming pressure cut by 30% for 3 turns.';
-      break;
-    }
-    case 'sentiment_shield': {
-      buffs.sentimentShieldTurns = 2;
-      extraNoteKo = '실시간 여론 방어막(2턴) 구축 및 RISK 감소!';
-      extraNoteEn = '2-turn Reputation shield active & RISK lowered!';
+      extraNoteKo = '전사 위기대응 TF 가동! 3턴간 기자 반격 압박 30% 경감 및 C·E 예산 20% 절감!';
+      extraNoteEn = 'Crisis TF active! -30% incoming pressure & -20% C/E XP cost for 3 turns.';
       break;
     }
     case 'grant_vp_xp': {
-      const grant = BALANCE.VP_SUPPORT_XP[state.company.scale];
-      xpDelta += grant;
-      extraNoteKo = `홍보실장 긴급 예비비 +${grant} XP 확보!`;
-      extraNoteEn = `Secured +${grant} emergency XP from PR Director!`;
+      // Scales cleanly from PR Director reserve (Stages 1~3) to Chairman's Office reserve (Stages 4~6)
+      const baseGrant =
+        battle.stage >= 4
+          ? Math.round(BALANCE.OWNER_BANQUET_XP[state.company.scale] * 0.85) +
+            (state.company.execTrait === 'owner_centric' ? 20 : 0)
+          : BALANCE.VP_SUPPORT_XP[state.company.scale];
+      xpDelta += baseGrant;
+      extraNoteKo =
+        battle.stage >= 4
+          ? `경영진·비서실 특별 예비비 +${baseGrant} XP 긴급 수혈!`
+          : `홍보실장 긴급 예비비 +${baseGrant} XP 확보!`;
+      extraNoteEn = `Secured +${baseGrant} emergency XP budget injection!`;
       break;
     }
     case 'legal_shield': {
+      // Consolidates Legal Team + External PR Agency + Crisis Consultant
       buffs.legalShieldActive = true;
-      extraNoteKo = '법무팀 법률 검토 방어막이 가동되었습니다.';
-      extraNoteEn = 'Corporate Legal Team compliance shield deployed.';
-      break;
-    }
-    case 'agency_support': {
-      buffs.agencyActiveTurns = 2;
-      extraNoteKo = '외부 PR 대행사 실무 분담으로 체력을 회복했습니다!';
-      extraNoteEn = 'External PR agency shared the workload, restoring stamina!';
-      break;
-    }
-    case 'hire_consultant': {
       buffs.consultantActive = true;
-      extraNoteKo = '위기관리 컨설턴트가 핵심 메시지 전략을 재설계했습니다!';
-      extraNoteEn = 'Crisis Consultant aligned executive messaging!';
+      buffs.agencyActiveTurns = 2;
+      extraNoteKo = '법무팀·외부 위기관리단 합동 투입! 법리 방어막 가동 및 실무 분담으로 체력(+5 HP) 회복!';
+      extraNoteEn = 'Legal & Crisis Counsel deployed! Shield active + workload shared (+5 HP restored)!';
       break;
     }
     case 'press_conference_swing': {
@@ -400,7 +375,7 @@ export function executePlayerSkill(
         pressureDelta = Math.round(pressureDelta * 1.45);
         reputationDelta += 5;
         extraNoteKo = '철저한 사전 검증 덕분에 기자회견 질의응답을 완벽히 주도했습니다!';
-        extraNoteEn = 'Backed by verified facts, your press conference commanded the room!';
+        extraNoteEn = 'Backed by verified facts, your live press conference commanded the room!';
       } else if (rng.chance(0.45)) {
         backfired = true;
         pressureDelta = 12;
@@ -412,55 +387,46 @@ export function executePlayerSkill(
       break;
     }
     case 'ceo_address': {
-      if (battle.stage >= 4) pressureDelta -= 6;
-      extraNoteKo = '최고경영자 공식 책임 입장이 발표되어 대외 신뢰가 상승합니다.';
-      extraNoteEn = 'CEO’s signed address bolstered institutional trust.';
-      break;
-    }
-    case 'owner_banquet_xp': {
-      const grant =
-        BALANCE.OWNER_BANQUET_XP[state.company.scale] +
-        (state.company.execTrait === 'owner_centric' ? 25 : 0);
-      xpDelta += grant;
-      extraNoteKo = `오너 일가 특별 지원 예산 +${grant} XP 확보!`;
-      extraNoteEn = `Unlocked +${grant} XP special budget from Chairman’s office!`;
-      break;
-    }
-    case 'chairman_gamble': {
+      // Consolidates CEO Official Address + Chairman's Direct Mandate
+      if (battle.stage >= 4) pressureDelta -= 5;
       if (buffs.factChecked || buffs.tfTurnsLeft > 0) {
-        pressureDelta -= 14;
-        reputationDelta += 5;
-        extraNoteKo = '회장님이 전폭적 수습 권한을 위임해 위기 돌파구가 열렸습니다!';
-        extraNoteEn = 'The Chairman authorized sweeping corrective measures!';
-      } else if (rng.chance(0.42)) {
+        pressureDelta -= 10;
+        reputationDelta += 4;
+        extraNoteKo = 'CEO 공식 담화와 회장님의 전권 수습 결단이 결합해 판세를 크게 흔들었습니다!';
+        extraNoteEn = 'CEO address backed by Chairman’s full mandate turned the tide decisively!';
+      } else if (rng.chance(0.28)) {
         backfired = true;
-        pressureDelta = 14;
-        riskDelta += 14;
-        reputationDelta -= 6;
-        extraNoteKo = '회장님의 즉흥적인 호통 발언이 새어나가 오히려 기름을 부었습니다!';
-        extraNoteEn = 'The Chairman’s off-the-cuff tirade leaked and inflamed the press!';
+        pressureDelta = 12;
+        riskDelta += 12;
+        reputationDelta -= 5;
+        extraNoteKo = '사전 조율 없이 나선 수뇌부의 즉흥 발언이 새어나가 오히려 기름을 부었습니다!';
+        extraNoteEn = 'Unvetted executive remarks leaked off-script and inflamed headlines!';
+      } else {
+        extraNoteKo = '최고경영진 공식 책임 입장이 발표되어 대외 신뢰가 상승합니다.';
+        extraNoteEn = 'Executive accountability statement bolstered institutional trust.';
       }
       break;
     }
     case 'dark_pressure': {
-      if (skill.id === 'D31_hold_request') {
-        if (lead.stats.intimacy >= 60 && !backfired) {
+      if (skill.id === 'D14_network_hold') {
+        if ((lead.stats.intimacy >= 58 || lead.archetype === 'networker') && !backfired) {
           pressureDelta = -22;
-          extraNoteKo = '그동안 쌓은 두터운 친분 덕분에 이번 한 번만 보도를 보류받았습니다.';
-          extraNoteEn = 'High personal trust convinced the reporter to hold off for now.';
+          extraNoteKo = '두터운 친분과 선배 인맥이 작동해 이번 한 번만 보도 유예를 받아냈습니다.';
+          extraNoteEn = 'High personal trust and alumni ties secured a temporary publication hold.';
         } else {
           backfired = true;
           pressureDelta = 10;
           trustDelta = -12;
-          extraNoteKo = '신뢰도 없이 무작정 기사를 막아달라 했다가 특종 확신만 심어줬습니다!';
-          extraNoteEn = 'Begging to hold without trust convinced them the scoop is huge!';
+          if (memRec) memRec.caughtPressuring += 1;
+          extraNoteKo = '신뢰 없이 윗선 인맥으로 기사를 막으려다 일선 기자의 특종 투지만 불태웠습니다!';
+          extraNoteEn = 'Top-down hold plea without trust provoked fierce reporter pushback!';
         }
       } else if (backfired) {
         pressureDelta = Math.abs(Math.round(skill.pressureDelta * 0.55));
         reputationDelta -= 6;
         if (memRec) memRec.caughtPressuring += 1;
-        extraNoteKo = '부당한 회유·외압 시도가 역풍을 맞아 기자의 취재 의지가 폭발했습니다!';
-        extraNoteEn = 'Backroom spin backfired—provoking fierce counter-investigation!';
+        extraNoteKo = '광고·협찬 회유 시도가 역풍을 맞아 기사에 외압 정황까지 언급될 위기입니다!';
+        extraNoteEn = 'Ad/sponsorship leverage backfired—provoking fierce counter-investigation!';
       } else {
         if (memRec && rng.chance(0.4)) memRec.caughtPressuring += 1;
         extraNoteKo = '단기 보도 압박은 눌렀으나 역풍 위험(RISK)이 크게 쌓였습니다.';
@@ -472,8 +438,8 @@ export function executePlayerSkill(
       if (memRec) memRec.legalThreatsReceived += 1;
       if (lead.stats.evidenceLevel < 52 && !backfired) {
         pressureDelta = -24;
-        extraNoteKo = '증거가 부족했던 기자가 소송 리스크를 의식해 기사 수위를 낮췄습니다.';
-        extraNoteEn = 'With thin evidence, the legal warning forced a cautious rewrite.';
+        extraNoteKo = '증거가 부족했던 기자가 가처분·소송 리스크를 의식해 기사 수위를 낮췄습니다.';
+        extraNoteEn = 'With thin evidence, the injunction warning forced a cautious rewrite.';
       } else {
         backfired = true;
         pressureDelta = 15;
@@ -489,20 +455,30 @@ export function executePlayerSkill(
         pressureDelta = 8;
         reputationDelta -= 8;
         if (memRec) memRec.caughtPressuring += 1;
-        extraNoteKo = '물량 공세 배후가 탐사팀에 포착되어 역풍을 맞았습니다!';
-        extraNoteEn = 'Your PR blitz trail got exposed by investigative reporters!';
+        extraNoteKo = '물타기·물량 공세 배후가 포착되어 온라인과 탐사팀의 역풍을 맞았습니다!';
+        extraNoteEn = 'Your smokescreen & PR blitz trail got exposed by reporters!';
       } else {
-        extraNoteKo = '막대한 그룹 예산을 쏟아부어 여론 급한 불을 껐습니다 (RISK 급증 주의!).';
+        extraNoteKo = '막대한 그룹 예산을 쏟아부어 급한 불을 껐습니다 (RISK 급증 주의!).';
         extraNoteEn = 'Massive group budget blitz dampened headlines, spiking RISK!';
       }
       break;
     }
     case 'sincere_apology': {
+      // Consolidates Sincere Public Apology + Victim Compensation Plan
       buffs.apologyIssued = true;
+      buffs.compensationIssued = true;
       if (memRec) memRec.sincereRemedies += 1;
-      if (buffs.whistleblowerVerified) pressureDelta -= 6;
-      extraNoteKo = '진정성 있는 공식 사과로 여론 악화를 진정시켰습니다.';
-      extraNoteEn = 'Sincere public apology cooled down public anger.';
+      if (
+        buffs.whistleblowerVerified ||
+        battle.stage === 1 ||
+        battle.stage === 2 ||
+        battle.ownerVariant === 'safety_coverup'
+      ) {
+        pressureDelta -= 7;
+        reputationDelta += 3;
+      }
+      extraNoteKo = '진정성 있는 공식 사과와 선제적 피해 보상안 발표로 여론이 우호적으로 돌아섰습니다!';
+      extraNoteEn = 'Sincere public apology paired with victim restitution turned public mood around!';
       break;
     }
     case 'factual_correction': {
@@ -513,63 +489,46 @@ export function executePlayerSkill(
         extraNoteKo = '사전 팩트 검증 데이터와 결합해 완벽한 정정 근거를 제시했습니다!';
         extraNoteEn = 'Paired with verified data, your correction proof was undeniable!';
       } else {
-        extraNoteKo = '사실과 다른 대목에 대해 정정 자료를 제출했습니다.';
+        extraNoteKo = '사실과 다른 대목에 대해 정정 반박 자료를 제출했습니다.';
         extraNoteEn = 'Submitted factual correction materials.';
       }
       break;
     }
-    case 'victim_compensation': {
-      buffs.compensationIssued = true;
-      if (memRec) memRec.sincereRemedies += 1;
-      if (battle.stage === 1 || battle.stage === 2 || battle.ownerVariant === 'safety_coverup') {
-        pressureDelta -= 8;
-        reputationDelta += 4;
-      }
-      extraNoteKo = '선제적인 피해자 구제·보상안 발표로 여론이 우호적으로 돌아섰습니다!';
-      extraNoteEn = 'Proactive victim compensation turned public sentiment around!';
-      break;
-    }
-    case 'exec_replacement': {
-      buffs.reformIssued = true;
-      if (memRec) memRec.sincereRemedies += 1;
-      extraNoteKo = '책임 임원 전격 문책으로 단호한 쇄신 의지를 증명했습니다!';
-      extraNoteEn = 'Executive dismissal demonstrated decisive accountability!';
-      break;
-    }
     case 'substantive_reform': {
+      // Consolidates Executive Dismissal + Substantive Structural Reform
       buffs.reformIssued = true;
       if (memRec) memRec.sincereRemedies += 1;
       if (buffs.whistleblowerVerified || buffs.factChecked) {
         pressureDelta -= 7;
       }
-      extraNoteKo = '구체적인 재발 방지 제도 개혁안을 발표해 신뢰 회복 발판을 마련했습니다!';
-      extraNoteEn = 'Concrete structural reforms laid the groundwork for trust restoration!';
+      extraNoteKo = '책임 임원 문책과 근본적 재발 방지 개혁안을 단행해 신뢰 회복 발판을 마련했습니다!';
+      extraNoteEn = 'Executive accountability and structural reforms unlocked deep trust recovery!';
       break;
     }
     case 'emergency_rest': {
       buffs.hangoverNextTurn = false;
-      extraNoteKo = '수액 한 팩과 꿀잠으로 체력(HP)을 대폭 회복했습니다!';
-      extraNoteEn = 'IV drip and power nap restored precious stamina!';
+      extraNoteKo = '수액 한 팩과 꿀잠으로 체력(HP)을 +38 회복하고 숙취를 해소했습니다!';
+      extraNoteEn = 'IV drip and power nap restored +38 stamina and cured hangover!';
       break;
     }
     default: {
-      // Standard skills (A01~A10)
-      if (skill.id === 'A05_dinner_drinks' || skill.id === 'A06_bomb_shot') {
+      // Standard A-category skills (A01~A04)
+      if (skill.id === 'A02_coffee_lunch' || skill.id === 'A03_bomb_shot') {
         if (!backfired && memRec) memRec.winedAndDined += 1;
-        if (skill.id === 'A06_bomb_shot') {
+        if (skill.id === 'A03_bomb_shot') {
           buffs.hangoverNextTurn = true;
           extraNoteKo = '폭탄주 투혼 발휘! (다음 턴 숙취로 체력 소모 +5 주의)';
           extraNoteEn = 'Bomb-shot gambit played! (Next turn +5 HP hangover penalty)';
         }
       }
-      if ((skill.id === 'A07_press_statement' || skill.id === 'A10_extra_materials') && buffs.factChecked) {
-        pressureDelta = Math.round(pressureDelta * 1.45);
-        reputationDelta += 3;
+      if (skill.id === 'A04_press_statement') {
         if (memRec) memRec.accurateDataGiven += 1;
-        extraNoteKo = '[팩트 검증 시너지] 탄탄한 근거 덕분에 해명 효과가 1.45배 증폭되었습니다!';
-        extraNoteEn = '[Fact-Verified Synergy] 1.45x stronger statement impact!';
-      } else if (skill.id === 'A10_extra_materials' && memRec) {
-        memRec.accurateDataGiven += 1;
+        if (buffs.factChecked) {
+          pressureDelta = Math.round(pressureDelta * 1.45);
+          reputationDelta += 3;
+          extraNoteKo = '[팩트 검증 시너지] 탄탄한 원본 근거 덕분에 해명 효과가 1.45배 증폭되었습니다!';
+          extraNoteEn = '[Fact-Verified Synergy] 1.45x stronger statement & dataset impact!';
+        }
       }
       break;
     }

@@ -32,14 +32,14 @@ export function classifyPRArchetype(state: GameState): PRArchetypeId {
   const counts = state.skillUsageCounts;
   const getSum = (ids: string[]) => ids.reduce((acc, id) => acc + (counts[id] || 0), 0);
 
-  const drinkCount = getSum(['A04_lunch_meeting', 'A05_dinner_drinks', 'A06_bomb_shot']);
-  const hotlineCount = getSum(['A01_phone_call', 'A02_text_message', 'A03_coffee_chat', 'A08_background_briefing']);
-  const moneyCount = getSum(['D27_ad_leverage', 'D28_sponsorship_offer', 'D34_all_out_budget', 'C21_pr_agency']);
-  const legalCount = getSum(['C20_legal_team', 'D33_legal_warning']);
-  const factCount = getSum(['B14_internal_factcheck', 'B15_disclosure_audit', 'A10_extra_materials', 'E36_correct_misinfo', 'B11_profile_analysis']);
-  const chairmanCount = getSum(['C19_vp_support', 'C24_ceo_statement', 'C25_owner_banquet', 'C26_chairman_call']);
-  const warCount = getSum(['D29_exec_network', 'D30_ex_journalist_net', 'D32_issue_diversion', 'D33_legal_warning']);
-  const masterCount = getSum(['E35_official_apology', 'E37_victim_compensation', 'E38_exec_replacement', 'E39_substantive_reform', 'B17_crisis_tf', 'C22_crisis_consultant']);
+  const drinkCount = getSum(['A02_coffee_lunch', 'A03_bomb_shot']);
+  const hotlineCount = getSum(['A01_phone_call', 'A02_coffee_lunch', 'A04_press_statement']);
+  const moneyCount = getSum(['D13_ad_sponsorship', 'D16_all_out_blitz']);
+  const legalCount = getSum(['C10_legal_agency_shield', 'D15_legal_warning']);
+  const factCount = getSum(['B05_reporter_profiling', 'B06_internal_factcheck', 'A04_press_statement', 'E18_factual_correction']);
+  const chairmanCount = getSum(['C09_emergency_budget', 'C12_ceo_chairman_call']);
+  const warCount = getSum(['D14_network_hold', 'D15_legal_warning', 'D16_all_out_blitz']);
+  const masterCount = getSum(['E17_apology_compensation', 'E19_exec_reform', 'B07_whistleblower_probe', 'B08_crisis_tf', 'C11_emergency_press_conf']);
 
   const buckets: { id: PRArchetypeId; score: number }[] = [
     { id: 'type_bomb_shot', score: drinkCount * 1.45 },

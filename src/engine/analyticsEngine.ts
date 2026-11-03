@@ -113,12 +113,11 @@ export function selectSkillByPolicy(
 
   // Survival guardrails for non-random policies
   if (policy !== 'random_baseline') {
-    if (state.resources.hp <= 28 && usable.includes('E40_emergency_rest')) {
-      return 'E40_emergency_rest';
+    if (state.resources.hp <= 30 && usable.includes('E20_emergency_rest')) {
+      return 'E20_emergency_rest';
     }
-    if (state.resources.xp <= 22) {
-      if (usable.includes('C25_owner_banquet') && state.resources.hp >= 40) return 'C25_owner_banquet';
-      if (usable.includes('C19_vp_support') && state.resources.hp >= 30) return 'C19_vp_support';
+    if (state.resources.xp <= 24 && usable.includes('C09_emergency_budget') && state.resources.hp >= 30) {
+      return 'C09_emergency_budget';
     }
   }
 
@@ -155,79 +154,67 @@ export function selectSkillByPolicy(
 
   const priorityQueues: Record<Exclude<StrategyPolicyId, 'random_baseline' | 'player_habit'>, string[]> = {
     transparent_remedy: [
-      !battle.buffs.factChecked ? 'B14_internal_factcheck' : '',
-      !battle.buffs.whistleblowerVerified && battle.stage >= 2 ? 'B16_whistleblower_verify' : '',
-      'E39_substantive_reform',
-      'E37_victim_compensation',
-      'E35_official_apology',
-      'E38_exec_replacement',
-      'C23_emergency_press_conf',
-      'C24_ceo_statement',
-      'E36_correct_misinfo',
-      'B17_crisis_tf',
-      'A10_extra_materials',
-      'A08_background_briefing',
-      'A07_press_statement',
+      !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
+      !battle.buffs.whistleblowerVerified && battle.stage >= 2 ? 'B07_whistleblower_probe' : '',
+      'E19_exec_reform',
+      'E17_apology_compensation',
+      'C11_emergency_press_conf',
+      'C12_ceo_chairman_call',
+      'E18_factual_correction',
+      'B08_crisis_tf',
+      'A04_press_statement',
+      'A02_coffee_lunch',
       'A01_phone_call',
-      'A02_text_message',
     ],
     fact_check: [
-      !battle.journalists[0].isAnalyzed ? 'B11_profile_analysis' : '',
-      !battle.buffs.disclosureAudited ? 'B15_disclosure_audit' : '',
-      !battle.buffs.factChecked ? 'B14_internal_factcheck' : '',
-      !battle.buffs.deadlineChecked ? 'B13_deadline_check' : '',
-      'E36_correct_misinfo',
-      'A10_extra_materials',
-      'A07_press_statement',
-      'C22_crisis_consultant',
-      'B12_intent_probe',
-      'A08_background_briefing',
-      'B18_sentiment_monitor',
+      !battle.journalists[0].isAnalyzed ? 'B05_reporter_profiling' : '',
+      !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
+      !battle.buffs.whistleblowerVerified ? 'B07_whistleblower_probe' : '',
+      'E18_factual_correction',
+      'A04_press_statement',
+      'C10_legal_agency_shield',
+      'C11_emergency_press_conf',
+      'B08_crisis_tf',
+      'A02_coffee_lunch',
       'A01_phone_call',
-      'A02_text_message',
     ],
     relationship: [
-      'A06_bomb_shot',
-      'A05_dinner_drinks',
-      'A04_lunch_meeting',
-      'A03_coffee_chat',
-      'D30_ex_journalist_net',
-      'A09_press_roundtable',
-      'A08_background_briefing',
+      !battle.journalists[0].isAnalyzed ? 'B05_reporter_profiling' : '',
+      state.resources.hp >= 42 && evaluateSkillPreview(state, 'A03_bomb_shot').affinityRating !== 'backfire'
+        ? 'A03_bomb_shot'
+        : '',
+      'A02_coffee_lunch',
+      'C11_emergency_press_conf',
       'A01_phone_call',
-      'A02_text_message',
-      'C19_vp_support',
+      'A04_press_statement',
+      'C09_emergency_budget',
     ],
     legal_defense: [
-      !battle.buffs.legalShieldActive ? 'C20_legal_team' : '',
-      'D33_legal_warning',
-      !battle.buffs.disclosureAudited ? 'B15_disclosure_audit' : '',
-      !battle.buffs.factChecked ? 'B14_internal_factcheck' : '',
-      'C22_crisis_consultant',
-      'A07_press_statement',
-      'E36_correct_misinfo',
-      'B18_sentiment_monitor',
+      !battle.buffs.legalShieldActive ? 'C10_legal_agency_shield' : '',
+      state.resources.risk <= 74 ? 'D15_legal_warning' : '',
+      !battle.buffs.factChecked ? 'B06_internal_factcheck' : '',
+      'A04_press_statement',
+      'E18_factual_correction',
+      'B07_whistleblower_probe',
       'A01_phone_call',
-      'A02_text_message',
     ],
     big_budget: [
-      'D34_all_out_budget',
-      'D27_ad_leverage',
-      'D28_sponsorship_offer',
-      'C21_pr_agency',
-      'D32_issue_diversion',
-      'C22_crisis_consultant',
-      'A09_press_roundtable',
-      'C25_owner_banquet',
-      'C19_vp_support',
-      'A07_press_statement',
-      'A02_text_message',
+      state.resources.risk <= 66 ? 'D16_all_out_blitz' : '',
+      state.resources.risk <= 70 ? 'D13_ad_sponsorship' : '',
+      'C12_ceo_chairman_call',
+      'C10_legal_agency_shield',
+      'C11_emergency_press_conf',
+      'C09_emergency_budget',
+      'A04_press_statement',
+      'A01_phone_call',
     ],
   };
 
   const queue = priorityQueues[policy].filter(Boolean);
   for (const cand of queue) {
     if (usable.includes(cand)) {
+      const prev = evaluateSkillPreview(state, cand);
+      if (prev.lethalWarningType) continue;
       // Avoid repeating same category 3x in a row if an alternative exists
       const sk = PR_SKILLS_BY_ID[cand];
       if (sk && battle.lastCategory === sk.category && battle.sameCategoryStreak >= 2 && usable.length > 2) {
@@ -237,7 +224,8 @@ export function selectSkillByPolicy(
     }
   }
 
-  return usable[0];
+  const nonLethal = usable.find((id) => !evaluateSkillPreview(state, id).lethalWarningType);
+  return nonLethal || usable[0];
 }
 
 // ==================== SECTION 3: COUNTERFACTUAL WHAT-IF ENGINE ====================
@@ -481,27 +469,29 @@ export function buildContextualWhatIfPresets(
   snap.chosenSkillSequence.forEach((skId, idx) => {
     const sk = PR_SKILLS_BY_ID[skId];
     if (sk && simAtTurn.phase === 'battle') {
-      let altId = 'B14_internal_factcheck';
-      if (skId === 'A05_dinner_drinks' || skId === 'A06_bomb_shot') {
-        altId = 'A07_press_statement';
+      let altId = 'B06_internal_factcheck';
+      if (skId === 'A02_coffee_lunch' || skId === 'A03_bomb_shot') {
+        altId = 'A04_press_statement';
       } else if (sk.category === 'D') {
-        altId = snap.unlockedSkillIdsAtStart.includes('C23_emergency_press_conf')
-          ? 'C23_emergency_press_conf'
-          : 'E35_official_apology';
+        altId = snap.unlockedSkillIdsAtStart.includes('C11_emergency_press_conf')
+          ? 'C11_emergency_press_conf'
+          : 'E17_apology_compensation';
       } else if (skId === 'A01_phone_call') {
-        altId = snap.unlockedSkillIdsAtStart.includes('C20_legal_team')
-          ? 'C20_legal_team'
-          : 'B14_internal_factcheck';
-      } else if (skId === 'B14_internal_factcheck') {
-        altId = 'A05_dinner_drinks';
+        altId = snap.unlockedSkillIdsAtStart.includes('C10_legal_agency_shield')
+          ? 'C10_legal_agency_shield'
+          : 'B06_internal_factcheck';
+      } else if (skId === 'B06_internal_factcheck') {
+        altId = snap.unlockedSkillIdsAtStart.includes('A03_bomb_shot')
+          ? 'A03_bomb_shot'
+          : 'A02_coffee_lunch';
       } else if (sk.category === 'E') {
-        altId = snap.unlockedSkillIdsAtStart.includes('D27_ad_leverage')
-          ? 'D27_ad_leverage'
-          : 'A08_background_briefing';
+        altId = snap.unlockedSkillIdsAtStart.includes('D13_ad_sponsorship')
+          ? 'D13_ad_sponsorship'
+          : 'D14_network_hold';
       } else {
-        altId = snap.unlockedSkillIdsAtStart.includes('E39_substantive_reform')
-          ? 'E39_substantive_reform'
-          : 'E35_official_apology';
+        altId = snap.unlockedSkillIdsAtStart.includes('E19_exec_reform')
+          ? 'E19_exec_reform'
+          : 'E17_apology_compensation';
       }
 
       if (!evaluateSkillPreview(simAtTurn, altId).usable) {
@@ -895,14 +885,13 @@ export function computeSkillEfficiencyBubbles(
 
     // Stage synergy bonus
     let stageBonus = 0;
-    if (sk.mechanic === 'audit_disclosure' && (stage === 3 || stage === 6)) stageBonus += 8;
+    if (sk.mechanic === 'verify_facts' && (stage === 3 || stage === 6)) stageBonus += 8;
     if (sk.mechanic === 'verify_whistleblower' && stage === 2) stageBonus += 7;
-    if (sk.mechanic === 'victim_compensation' && (stage === 1 || stage === 2)) stageBonus += 7;
-    if (sk.mechanic === 'legal_shield' && stage === 5) stageBonus += 6;
-    if (sk.mechanic === 'grant_vp_xp') stageBonus += 18;
-    if (sk.mechanic === 'owner_banquet_xp') stageBonus += 24;
+    if (sk.mechanic === 'sincere_apology' && (stage === 1 || stage === 2)) stageBonus += 7;
+    if (sk.mechanic === 'legal_shield' && stage === 5) stageBonus += 8;
+    if (sk.mechanic === 'grant_vp_xp') stageBonus += stage >= 4 ? 22 : 18;
     if (sk.mechanic === 'emergency_rest') stageBonus += 20;
-    if (sk.mechanic === 'verify_facts' || sk.mechanic === 'convene_tf') stageBonus += 10;
+    if (sk.mechanic === 'reveal_stats' || sk.mechanic === 'verify_facts' || sk.mechanic === 'convene_tf') stageBonus += 10;
 
     const rawPressReduction = -sk.pressureDelta * pMult;
     // Penalize expected value by backfire probability

@@ -1,7 +1,7 @@
 import { createPlaceholderGameState, GAME_STATE_VERSION } from '../engine/gameEngine';
 import { GameState } from '../types/game';
 
-const STORAGE_GAME_KEY = 'hongdam_craft_gamestate_v2';
+const STORAGE_GAME_KEY = 'hongdam_craft_gamestate_v3';
 const STORAGE_COMPLETED_HISTORY_KEY = 'hongdam_craft_completed_runs_v2';
 
 export function saveGameState(state: GameState): void {

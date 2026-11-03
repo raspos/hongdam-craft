@@ -184,8 +184,8 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                   : `XP (홍보예산): 기업 규모 배율(${scaleDef.xpCostMultiplier}배)이 유료 스킬에 적용됩니다. 예산 고갈 시 타 부서 발령 게임 오버!`)}
               {infoTip === 'hp' &&
                 (isEn
-                  ? 'HP (Stamina): Drops from overtime, stress, and drinks. Hitting 0 causes immediate Hospitalization Game Over. Use Skill #40 or #21 to recover.'
-                  : 'HP (체력): 야근·술자리·기자의 압박으로 감소하며 0이 되면 즉시 [병원 입원] 게임 오버됩니다. 40번 긴급 휴식으로 회복 가능!')}
+                  ? 'HP (Stamina): Drops from overtime, stress, and drinks. Hitting 0 causes immediate Hospitalization Game Over. Use Skill #20 or #10 to recover.'
+                  : 'HP (체력): 야근·술자리·기자의 압박으로 감소하며 0이 되면 즉시 [병원 입원] 게임 오버됩니다. #20 긴급 휴식 또는 #10 법무·위기관리 전담지원으로 회복 가능!')}
               {infoTip === 'risk' &&
                 (isEn
                   ? 'RISK (Backlash): Rises from D-category spin/lobbying. Above 45/70 triggers leak events; 100 triggers Dark PR Scandal Game Over.'
@@ -343,7 +343,7 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                   </div>
                 ) : (
                   <div className="text-[10px] text-slate-400 font-pixel">
-                    🔒 {isEn ? 'Use Skill #11 [Analyze Reporter Profile] to reveal exact 8 stats' : '스킬 #11 [기자 성향 분석] 사용 시 상세 능력치 공개'}
+                    🔒 {isEn ? 'Use Skill #05 [Reporter Profiling & Probe] to reveal exact stats & next move' : '스킬 #05 [기자 프로파일·취재탐색] 사용 시 상세 능력치·다음 행동 공개'}
                   </div>
                 )}
 

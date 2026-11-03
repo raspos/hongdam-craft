@@ -70,14 +70,18 @@ export async function runAllVerifications() {
   console.log('==============================================================\n');
 
   // 1. Content Counts & Bilingual KO/EN Completeness
-  console.log('1️⃣ Checking Content Scope (6 Stages, 12 Reporters, 40 Skills, 32 Events, 10 Endings) & KO/EN...');
+  console.log('1️⃣ Checking Content Scope (6 Stages, 12 Reporters, 20 Core Skills [4×5], 32 Events, 10 Endings) & KO/EN...');
   const hangulRegex = /[가-힣]/;
 
   assert(Object.keys(STAGES).length === 6, 'Must have exactly 6 stages');
   assert(OWNER_RISK_VARIANT_LIST.length === 6, 'Must have 6 Stage-6 owner scandal variants');
   assert(JOURNALIST_ARCHETYPE_LIST.length === 12, 'Must have 12 journalist archetypes');
   assert(Object.keys(JOURNALIST_COUNTER_SKILLS).length === 12, 'Must have 12 journalist counter-skills');
-  assert(PR_SKILLS.length === 40, `Must have 40 PR skills, found ${PR_SKILLS.length}`);
+  assert(PR_SKILLS.length === 20, `Must have 20 consolidated PR skills, found ${PR_SKILLS.length}`);
+  (['A', 'B', 'C', 'D', 'E'] as const).forEach((cat) => {
+    const count = PR_SKILLS.filter((s) => s.category === cat).length;
+    assert(count === 4, `Category ${cat} must have exactly 4 skills (2x2 grid), found ${count}`);
+  });
   assert(SUDDEN_EVENTS.length >= 30, `Must have >= 30 sudden events, found ${SUDDEN_EVENTS.length}`);
   assert(Object.keys(ENDINGS).length >= 8, 'Must have >= 8 endings');
   assert(Object.keys(PR_ARCHETYPES).length === 8, 'Must have 8 PR chief archetypes');
@@ -99,8 +103,8 @@ export async function runAllVerifications() {
   });
   console.log('  ✅ Scope & KO/EN translation checks passed.');
 
-  // 2. All 40 PR Skills Execution & Telemetry Verification
-  console.log('2️⃣ Stress-testing all 40 PR skills in live battle & verifying telemetry records...');
+  // 2. All 20 Core PR Skills Execution & Telemetry Verification
+  console.log('2️⃣ Stress-testing all 20 core PR skills in live battle & verifying telemetry records...');
   const baseRun = initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 424242, forcedScale: 'chaebol' });
   let stage6State = startStageBattle(baseRun, 6);
   stage6State.resources.xp = 5000;
@@ -132,7 +136,7 @@ export async function runAllVerifications() {
       `Telemetry XP delta mismatch on ${sk.id}`
     );
   }
-  console.log('  ✅ All 40 skills executed with zero NaN, valid bounds, and exact telemetry.');
+  console.log('  ✅ All 20 core skills executed with zero NaN, valid bounds, and exact telemetry.');
 
   // 3. Startup (100 XP) & Chaebol (1000 XP) 6-Stage Clearability
   console.log('3️⃣ Verifying Startup (100 XP) & Chaebol (1000 XP) 6-Stage Clearability...');
@@ -174,9 +178,9 @@ export async function runAllVerifications() {
   // 4a. HP = 0 Hospitalization + Lethal Warning
   let hpState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 77, forcedScale: 'midsize' }), 2);
   hpState.resources.hp = 10;
-  const bombShotPreview = evaluateSkillPreview(hpState, 'A06_bomb_shot'); // costs >= 18 HP
+  const bombShotPreview = evaluateSkillPreview(hpState, 'A03_bomb_shot'); // costs >= 20 HP
   assert(bombShotPreview.lethalWarningType === 'hp', 'Skill dropping HP <= 0 must trigger lethalWarningType === "hp"');
-  hpState = playBattleTurn(hpState, 'A06_bomb_shot');
+  hpState = playBattleTurn(hpState, 'A03_bomb_shot');
   assert(
     hpState.phase === 'ending' && hpState.endingSummary?.endingId === 'ending_overwork_hospital',
     `Expected ending_overwork_hospital, got ${hpState.endingSummary?.endingId}`
@@ -185,9 +189,9 @@ export async function runAllVerifications() {
   // 4b. RISK = 100 Lobby Exposed + Lethal Warning
   let riskState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 88, forcedScale: 'chaebol' }), 5);
   riskState.resources.risk = 82;
-  const blitzPreview = evaluateSkillPreview(riskState, 'D34_all_out_budget');
+  const blitzPreview = evaluateSkillPreview(riskState, 'D16_all_out_blitz');
   assert(blitzPreview.lethalWarningType === 'risk', 'Skill pushing RISK >= 100 must trigger lethalWarningType === "risk"');
-  riskState = playBattleTurn(riskState, 'D34_all_out_budget');
+  riskState = playBattleTurn(riskState, 'D16_all_out_blitz');
   assert(
     riskState.phase === 'ending' && riskState.endingSummary?.endingId === 'ending_lobby_exposed',
     `Expected ending_lobby_exposed, got ${riskState.endingSummary?.endingId}`
@@ -195,7 +199,7 @@ export async function runAllVerifications() {
 
   // 4c. XP Exhaustion Transfer Ending
   let xpState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 99, forcedScale: 'startup' }), 1);
-  xpState.resources.xp = 4; // Exact cost for A02_text_message
+  xpState.resources.xp = 5; // Exact cost for A01_phone_call (cheapest paid skill)
   // Put all 0-XP skills on cooldown (with >= 3 turns so they remain on cooldown after this turn)
   xpState.unlockedSkillIds.forEach((skId) => {
     const sk = PR_SKILLS_BY_ID[skId];
@@ -204,7 +208,7 @@ export async function runAllVerifications() {
     }
   });
   xpState.stageBattle!.pressure = 85;
-  xpState = playBattleTurn(xpState, 'A02_text_message'); // Spends last 4 XP -> 0 usable skills left!
+  xpState = playBattleTurn(xpState, 'A01_phone_call'); // Spends last 5 XP -> 0 usable skills left!
   assert(
     xpState.phase === 'ending' && xpState.endingSummary?.endingId === 'ending_budget_exhausted',
     `Expected ending_budget_exhausted when XP & free moves depleted, got ${xpState.endingSummary?.endingId}`
@@ -224,17 +228,17 @@ export async function runAllVerifications() {
   console.log('5️⃣ Verifying Fact-Checker Backfire & Deadline=1 Slow-Skill Lockout...');
   const fcState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 123, forcedScale: 'large' }), 3);
   fcState.stageBattle!.journalists[0].archetype = 'fact_checker';
-  const sponsorPrev = evaluateSkillPreview(fcState, 'D28_sponsorship_offer');
+  const sponsorPrev = evaluateSkillPreview(fcState, 'D13_ad_sponsorship');
   assert(
     sponsorPrev.affinityRating === 'backfire',
     `Fact-checker must flag sponsorship offer as backfire (got ${sponsorPrev.affinityRating})`
   );
 
   fcState.stageBattle!.deadline = 1;
-  const lunchPrevAtD1 = evaluateSkillPreview(fcState, 'A04_lunch_meeting');
-  const pressConfPrevAtD1 = evaluateSkillPreview(fcState, 'C23_emergency_press_conf');
+  const lunchPrevAtD1 = evaluateSkillPreview(fcState, 'A02_coffee_lunch');
+  const pressConfPrevAtD1 = evaluateSkillPreview(fcState, 'C11_emergency_press_conf');
   const callPrevAtD1 = evaluateSkillPreview(fcState, 'A01_phone_call');
-  assert(!lunchPrevAtD1.usable, 'Lunch meeting (deadlineMin 2) must lock at deadline=1');
+  assert(!lunchPrevAtD1.usable, 'Coffee/lunch meeting (deadlineMin 2) must lock at deadline=1');
   assert(!pressConfPrevAtD1.usable, 'Press conference (deadlineMin 2) must lock at deadline=1');
   assert(callPrevAtD1.usable, 'Phone call (deadlineMin 1) must remain usable at deadline=1');
   console.log('  ✅ Archetype affinity backfire & deadline lockouts verified.');
@@ -285,8 +289,8 @@ export async function runAllVerifications() {
 
   // 7. Data Journalism Reproducibility (WHAT-IF & Monte Carlo & Data Lab)
   console.log('7️⃣ Verifying Seeded WHAT-IF Reproducibility, Monte Carlo Sum=100%, and Data Lab Analytics...');
-  const wi1 = runWhatIfSingleTurn(fullRun, 1, 0, 'A05_dinner_drinks');
-  const wi2 = runWhatIfSingleTurn(fullRun, 1, 0, 'A05_dinner_drinks');
+  const wi1 = runWhatIfSingleTurn(fullRun, 1, 0, 'A02_coffee_lunch');
+  const wi2 = runWhatIfSingleTurn(fullRun, 1, 0, 'A02_coffee_lunch');
   assert(Boolean(wi1 && wi2), 'WHAT-IF single turn must produce comparison result');
   assert(
     JSON.stringify(wi1!.counterfactual.turnTrajectory) === JSON.stringify(wi2!.counterfactual.turnTrajectory),
@@ -332,7 +336,7 @@ export async function runAllVerifications() {
 
   COMPANY_SCALE_LIST.forEach((sc) => {
     const bubbles = computeSkillEfficiencyBubbles('all', 3, sc.id);
-    assert(bubbles.length === 40 && bubbles.every((b) => Number.isFinite(b.expectedEffectiveness)), 'Data Lab Skill Bubbles valid');
+    assert(bubbles.length === 20 && bubbles.every((b) => Number.isFinite(b.expectedEffectiveness)), 'Data Lab Skill Bubbles valid');
     const prof = computeStageCrisisProfiles(sc.id);
     assert(prof.length === 6 && prof.every((p) => Number.isFinite(p.estXpNeeded)), 'Data Lab Stage Profiles valid');
   });
@@ -340,18 +344,22 @@ export async function runAllVerifications() {
   // 8. Regression Checks: Bomb-Shot Hangover, Fact-Checked Synergy Preview, What-If Turn Usability
   let regState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 444, forcedScale: 'large' }), 2);
   regState.stageBattle!.journalists[0].archetype = 'networker';
-  regState = playBattleTurn(regState, 'A06_bomb_shot');
+  const baseCallPrev = evaluateSkillPreview(regState, 'A01_phone_call');
+  regState = playBattleTurn(regState, 'A03_bomb_shot');
   assert(Boolean(regState.stageBattle?.buffs.hangoverNextTurn), 'Bomb-shot must set hangoverNextTurn for next turn');
   const nextCallPrev = evaluateSkillPreview(regState, 'A01_phone_call');
-  assert(nextCallPrev.effectiveHpCost === 10, `Hangover must add +5 HP cost to phone call (got ${nextCallPrev.effectiveHpCost})`);
+  assert(
+    nextCallPrev.effectiveHpCost === baseCallPrev.effectiveHpCost + 5,
+    `Hangover must add +5 HP cost to phone call (expected ${baseCallPrev.effectiveHpCost + 5}, got ${nextCallPrev.effectiveHpCost})`
+  );
 
   let synState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 555, forcedScale: 'midsize' }), 1);
-  const rawPrevBefore = evaluateSkillPreview(synState, 'A10_extra_materials');
+  const rawPrevBefore = evaluateSkillPreview(synState, 'A04_press_statement');
   synState.stageBattle!.buffs.factChecked = true;
-  const rawPrevAfter = evaluateSkillPreview(synState, 'A10_extra_materials');
+  const rawPrevAfter = evaluateSkillPreview(synState, 'A04_press_statement');
   assert(
     Math.abs(rawPrevAfter.expectedPressureDelta) > Math.abs(rawPrevBefore.expectedPressureDelta),
-    'Fact-Checked buff must amplify A10_extra_materials pressure preview'
+    'Fact-Checked buff must amplify A04_press_statement pressure preview'
   );
 
   const wiTurnOpts = getWhatIfSkillOptionsAtTurn(fullRun, 1, 0);

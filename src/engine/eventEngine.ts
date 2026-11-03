@@ -12,12 +12,10 @@ export function rollSuddenEvent(
   if (!battle) return null;
 
   // Contextual trigger boost (e.g. high RISK, drinking, unverified statement)
-  const isDrinking = lastSkillId === 'A05_dinner_drinks' || lastSkillId === 'A06_bomb_shot';
-  const isUnverifiedStatement = lastSkillId === 'A07_press_statement' && !battle.buffs.factChecked;
+  const isDrinking = lastSkillId === 'A03_bomb_shot';
+  const isUnverifiedStatement = lastSkillId === 'A04_press_statement' && !battle.buffs.factChecked;
   const isSincereRemedy =
-    lastSkillId === 'E35_official_apology' ||
-    lastSkillId === 'E37_victim_compensation' ||
-    lastSkillId === 'E39_substantive_reform';
+    lastSkillId === 'E17_apology_compensation' || lastSkillId === 'E19_exec_reform';
 
   let triggerProb = BALANCE.SUDDEN_EVENT_BASE_PROB;
   if (isDrinking || isUnverifiedStatement || state.resources.risk >= 55) {
@@ -49,7 +47,7 @@ export function rollSuddenEvent(
       case 'low_hp_40':
         return state.resources.hp <= 45;
       case 'legal_used':
-        return battle.buffs.legalShieldActive || lastSkillId === 'D33_legal_warning';
+        return battle.buffs.legalShieldActive || lastSkillId === 'D15_legal_warning';
       case 'stage_2_plus':
         return battle.stage >= 2;
       case 'stage_4_plus':

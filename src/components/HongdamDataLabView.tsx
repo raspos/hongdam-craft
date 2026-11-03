@@ -225,8 +225,8 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             {isEn
-              ? 'Quantitative analysis of 12 fictional journalist archetypes, 40 PR skills, 5 corporate scales, 6 crisis stages, and 6 strategy models.'
-              : '가상 시뮬레이션 규칙 아래에서 작동하는 12종 기자 상성, 40종 홍보 스킬 효율, 5대 기업 규모, 6대 위기 난이도, 6대 대응 전략의 정량 분석실입니다.'}
+              ? 'Quantitative analysis of 12 fictional journalist archetypes, 20 core PR skills, 5 corporate scales, 6 crisis stages, and 6 strategy models.'
+              : '가상 시뮬레이션 규칙 아래에서 작동하는 12종 기자 상성, 20종 핵심 홍보 스킬 효율, 5대 기업 규모, 6대 위기 난이도, 6대 대응 전략의 정량 분석실입니다.'}
           </p>
         </div>
 
@@ -266,8 +266,8 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
           {
             id: 'B_skills' as const,
             icon: Zap,
-            ko: 'B. 40스킬 버블 효율',
-            en: 'B. 40 Skills Bubble',
+            ko: 'B. 20스킬 버블 효율',
+            en: 'B. 20 Skills Bubble',
           },
           {
             id: 'C_scales' as const,
@@ -425,7 +425,7 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
         </div>
       )}
 
-      {/* ==================== SECTION B: 40 PR SKILLS BUBBLE CHART ==================== */}
+      {/* ==================== SECTION B: 20 CORE PR SKILLS BUBBLE CHART ==================== */}
       {activeTab === 'B_skills' && (
         <div className="pixel-card p-4 sm:p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -434,8 +434,8 @@ export const HongdamDataLabView: React.FC<HongdamDataLabViewProps> = ({
                 <Filter className="w-4 h-4" />
                 <span>
                   {isEn
-                    ? '40 PR Skills Cost–Effectiveness Bubble Explorer'
-                    : '40종 홍보 스킬 비용 대비 기대효과 버블 차트'}
+                    ? '20 Core PR Skills Cost–Effectiveness Bubble Explorer'
+                    : '20종 핵심 홍보 스킬 비용 대비 기대효과 버블 차트'}
                 </span>
               </div>
               <p className="text-xs text-slate-400">

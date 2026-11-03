@@ -222,7 +222,7 @@ const HongdamAppInner: React.FC = () => {
                     </div>
                   </div>
                   <div className="bg-slate-950/90 p-2 rounded border border-slate-800">
-                    <div className="text-sky-300 font-bold">40 PR SKILLS</div>
+                    <div className="text-sky-300 font-bold">20 CORE SKILLS</div>
                     <div className="text-[10px] text-slate-400">
                       {isEn ? 'WHAT-IF + Data Lab' : '반사실 분석·데이터랩'}
                     </div>

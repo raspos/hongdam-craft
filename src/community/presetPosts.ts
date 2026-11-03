@@ -33,9 +33,9 @@ export const PRESET_BAMBOO_POSTS: BambooPost[] = [
     archetypeBadgeEn: 'The Bomb-Shot Networking Chief',
     category: 'hangover',
     content:
-      '[예시] 원칙주의 팩트체커 기자한테 폭탄주 원샷 스킬 썼다가 역효과 터지고 다음 턴 숙취 디버프까지 겹쳐서 응급실 실려 갔습니다… 기자 성향 분석(11번)부터 먼저 쓸걸 그랬어요 ㅠㅠ',
+      '[예시] 원칙주의 팩트체커 기자한테 폭탄주 원샷 스킬 썼다가 역효과 터지고 다음 턴 숙취 디버프까지 겹쳐서 응급실 실려 갔습니다… 기자 프로파일·취재탐색(#05)부터 먼저 쓸걸 그랬어요 ㅠㅠ',
     contentEn:
-      '[Sample] Used Bomb-Shot Bottoms-Up on a Principled Fact-Checker—massive backfire plus hangover debuff sent me straight to the hospital! Always run Reporter Profile Analysis (#11) first…',
+      '[Sample] Used Bomb-Shot Bottoms-Up on a Principled Fact-Checker—massive backfire plus hangover debuff sent me straight to the hospital! Always run Reporter Profiling (#05) first…',
     createdAt: Date.now() - 1000 * 60 * 320,
     isPresetSample: true,
     reactions: { soju: 29, summon_reporter: 8, call_chairman: 5, comfort: 33, congrats: 1 },
