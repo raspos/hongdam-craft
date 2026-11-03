@@ -69,8 +69,18 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
             </div>
           </div>
 
-          {/* Mobile quick language button */}
-          <div className="flex lg:hidden items-center gap-1.5">
+          {/* Mobile quick action buttons */}
+          <div className="flex lg:hidden items-center gap-1 shrink-0">
+            <button
+              onClick={() => {
+                sound.playClick();
+                onOpenMethodology();
+              }}
+              className="p-1.5 rounded bg-slate-900 border border-slate-700 text-sky-300"
+              title={isEn ? 'Virtual Simulation Model' : '데이터저널리즘 가상 모형 설명'}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={() => {
                 sound.playClick();
@@ -80,6 +90,20 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
             >
               <Globe className="w-3 h-3" />
               <span>{language === 'ko' ? 'EN' : 'KO'}</span>
+            </button>
+            <button
+              onClick={handleToggleSound}
+              className="p-1.5 rounded bg-slate-900 border border-slate-800 text-slate-300"
+              title={isEn ? 'Toggle Sound' : '사운드 켜기/끄기'}
+            >
+              {muted ? <VolumeX className="w-3.5 h-3.5 text-slate-500" /> : <Volume2 className="w-3.5 h-3.5 text-sky-400" />}
+            </button>
+            <button
+              onClick={onResetGame}
+              className="p-1.5 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+              title={isEn ? 'Reset Run' : '새 게임 초기화'}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

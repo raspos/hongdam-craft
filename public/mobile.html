@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>홍담 크래프트 — 모바일 화면 미리보기 | CRAFT UNIVERSE</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #1e293b 0%, #090d16 65%, #05070c 100%);
+        color: #f1f5f9;
+        font-family: 'Pretendard', 'Malgun Gothic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+      body.fit-mode {
+        height: 100vh;
+        overflow: hidden;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 18px;
+        background: rgba(9, 13, 22, 0.92);
+        border-bottom: 1px solid #1e293b;
+        backdrop-filter: blur(8px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .badge {
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: rgba(245, 158, 11, 0.16);
+        border: 1px solid rgba(245, 158, 11, 0.6);
+        color: #fcd34d;
+        letter-spacing: 0.04em;
+      }
+      .title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #fff;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+      }
+      button, a.btn {
+        appearance: none;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #cbd5e1;
+        padding: 6px 11px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      button:hover, a.btn:hover {
+        border-color: #64748b;
+        color: #fff;
+        background: #1e293b;
+      }
+      button.active {
+        background: #dc2626;
+        border-color: #f87171;
+        color: #fff;
+      }
+      button.active-lab {
+        background: #4f46e5;
+        border-color: #818cf8;
+        color: #fff;
+      }
+      main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        padding: 16px;
+        overflow: hidden;
+      }
+      .stage-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .phone-bezel {
+        position: relative;
+        background: #0b0f19;
+        border-radius: 44px;
+        padding: 13px;
+        border: 3px solid #334155;
+        box-shadow:
+          0 0 0 2px #0f172a,
+          0 25px 60px rgba(0, 0, 0, 0.75),
+          0 0 40px rgba(239, 68, 68, 0.12);
+        transform-origin: center center;
+        transition: width 0.22s ease, height 0.22s ease, transform 0.2s ease, border-radius 0.2s ease;
+      }
+      .phone-notch {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 96px;
+        height: 22px;
+        background: #030712;
+        border-radius: 999px;
+        z-index: 10;
+        border: 1px solid rgba(51, 65, 85, 0.6);
+        pointer-events: none;
+      }
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        border-radius: 32px;
+        overflow: hidden;
+        background: #020617;
+        border: 1px solid #1e293b;
+        position: relative;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: #020617;
+      }
+      .side-panel {
+        width: 280px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid #1e293b;
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .side-panel h2 {
+        margin: 0;
+        font-size: 14px;
+        color: #fbbf24;
+      }
+      .side-panel p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #94a3b8;
+      }
+      .qr-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 10px;
+        width: 156px;
+        height: 156px;
+        margin: 2px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .qr-box img {
+        width: 136px;
+        height: 136px;
+        display: block;
+      }
+      .url-chip {
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 11px;
+        color: #38bdf8;
+        word-break: break-all;
+      }
+      .meta-tag {
+        font-size: 11px;
+        color: #64748b;
+        text-align: center;
+      }
+      @media (max-width: 980px) {
+        .side-panel {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="badge">MOBILE VIEWPORT</span>
+        <span class="title">홍담 크래프트 모바일 시뮬레이터</span>
+        <span id="sizeLabel" style="font-size:12px;color:#94a3b8;">393 × 852 (iPhone 15 Pro)</span>
+      </div>
+
+      <div class="toolbar">
+        <button id="btnGame" class="active" onclick="setAppRoute('./')">⚔️ 게임 화면</button>
+        <button id="btnLab" onclick="setAppRoute('./?view=datalab')">📊 홍담 데이터랩</button>
+        <span style="width:1px;height:18px;background:#334155;margin:0 2px;"></span>
+        <button id="dev-iphone15" class="active" onclick="setDevice('iphone15', 393, 852, 'iPhone 15 Pro')">iPhone 15 Pro</button>
+        <button id="dev-galaxy" onclick="setDevice('galaxy', 360, 780, 'Galaxy S24')">Galaxy S24</button>
+        <button id="dev-se" onclick="setDevice('se', 375, 667, 'iPhone SE')">iPhone SE</button>
+        <button id="dev-ipad" onclick="setDevice('ipad', 768, 1024, 'iPad Mini')">iPad Mini</button>
+        <button onclick="toggleRotate()" title="가로/세로 회전">🔄 회전</button>
+        <button id="btnFit" class="active" onclick="toggleFit()" title="현재 모니터 높이에 자동 맞춤">📐 화면맞춤 ON</button>
+        <a class="btn" href="./" title="데스크톱 전체화면으로 보기">🖥️ PC 전체화면</a>
+      </div>
+    </header>
+
+    <main id="mainArea">
+      <div class="stage-wrap">
+        <div id="bezel" class="phone-bezel" style="width: 419px; height: 878px;">
+          <div id="notch" class="phone-notch"></div>
+          <div class="phone-screen">
+            <iframe id="appFrame" src="./" title="Hongdam Craft Mobile Preview"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side-panel">
+        <h2>📱 실제 스마트폰으로 접속하기</h2>
+        <p>PC와 스마트폰이 <strong>같은 Wi-Fi</strong>에 연결되어 있다면 아래 QR 코드 또는 주소로 직접 접속할 수 있습니다.</p>
+        <div class="qr-box" id="qrWrap">
+          <img id="qrImg" alt="모바일 접속 QR" />
+        </div>
+        <div>
+          <div style="font-size:11px;color:#cbd5e1;margin-bottom:4px;font-weight:700;">Wi-Fi 로컬 접속 주소</div>
+          <div class="url-chip" id="lanUrl">http://10.192.15.62:5173/</div>
+        </div>
+        <div id="tsBlock">
+          <div style="font-size:11px;color:#cbd5e1;margin-bottom:4px;font-weight:700;">Tailscale 연결 시</div>
+          <div class="url-chip">http://100.70.166.78:5173/</div>
+        </div>
+        <div class="meta-tag">실제 기기 접속 시 외곽 베젤 없이<br/>모바일 전체 화면으로 실행됩니다.</div>
+      </aside>
+    </main>
+
+    <script>
+      let curW = 393;
+      let curH = 852;
+      let curName = 'iPhone 15 Pro';
+      let curId = 'iphone15';
+      let landscape = false;
+      let autoFit = true;
+
+      // Initialize route from ?view=datalab if passed
+      const initParams = new URLSearchParams(window.location.search);
+      if (initParams.get('view') === 'datalab') {
+        setAppRoute('./?view=datalab');
+      }
+
+      // Setup QR URL
+      const lanTarget = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `http://10.192.15.62:${window.location.port || '5173'}/`
+        : new URL('./', window.location.href).href;
+      document.getElementById('lanUrl').textContent = lanTarget;
+      const qrImg = document.getElementById('qrImg');
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(lanTarget)}`;
+      qrImg.onerror = () => {
+        document.getElementById('qrWrap').style.display = 'none';
+      };
+
+      function setAppRoute(route) {
+        const frame = document.getElementById('appFrame');
+        frame.src = route;
+        const isLab = route.includes('datalab');
+        document.getElementById('btnGame').className = isLab ? '' : 'active';
+        document.getElementById('btnLab').className = isLab ? 'active-lab' : '';
+      }
+
+      function setDevice(id, w, h, name) {
+        curId = id;
+        curW = w;
+        curH = h;
+        curName = name;
+        landscape = false;
+        ['iphone15', 'galaxy', 'se', 'ipad'].forEach((k) => {
+          document.getElementById('dev-' + k).className = k === id ? 'active' : '';
+        });
+        applyGeometry();
+      }
+
+      function toggleRotate() {
+        landscape = !landscape;
+        applyGeometry();
+      }
+
+      function toggleFit() {
+        autoFit = !autoFit;
+        const btn = document.getElementById('btnFit');
+        btn.textContent = autoFit ? '📐 화면맞춤 ON' : '📐 100% 실제크기';
+        btn.className = autoFit ? 'active' : '';
+        applyGeometry();
+      }
+
+      function applyGeometry() {
+        const w = landscape ? curH : curW;
+        const h = landscape ? curW : curH;
+        const bezelPad = 26;
+        const totalW = w + bezelPad;
+        const totalH = h + bezelPad;
+
+        const bezel = document.getElementById('bezel');
+        const notch = document.getElementById('notch');
+        bezel.style.width = totalW + 'px';
+        bezel.style.height = totalH + 'px';
+        bezel.style.borderRadius = curId === 'ipad' ? '28px' : '44px';
+        notch.style.display = landscape || curId === 'ipad' || curId === 'se' ? 'none' : 'block';
+
+        document.getElementById('sizeLabel').textContent =
+          `${w} × ${h} (${curName}${landscape ? ' · 가로' : ''})`;
+
+        if (autoFit) {
+          document.body.classList.add('fit-mode');
+          const availH = Math.max(380, window.innerHeight - 86);
+          const availW = Math.max(320, window.innerWidth - (window.innerWidth > 980 ? 350 : 40));
+          const scale = Math.min(1, availH / totalH, availW / totalW);
+          bezel.style.transform = `scale(${scale.toFixed(3)})`;
+        } else {
+          document.body.classList.remove('fit-mode');
+          bezel.style.transform = 'scale(1)';
+        }
+      }
+
+      window.addEventListener('resize', applyGeometry);
+      applyGeometry();
+    </script>
+  </body>
+</html>
