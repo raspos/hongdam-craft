@@ -28,7 +28,7 @@ import {
 import { trackFunnelStep } from './utils/funnelTracker';
 import { BambooGroveModal } from './components/BambooGroveModal';
 import { BattleHUD } from './components/BattleHUD';
-import { BattleLogPanel } from './components/BattleLogPanel';
+import { ReporterReactionPanel } from './components/ReporterReactionPanel';
 import { CharacterCreationScreen } from './components/CharacterCreationScreen';
 import { CraftUniverseNavbar } from './components/CraftUniverseNavbar';
 import { DangerConfirmModal } from './components/DangerConfirmModal';
@@ -539,7 +539,7 @@ const HongdamAppInner: React.FC = () => {
                     setDangerModal({ mode: 'lethal_skill', skillId, preview })
                   }
                 />
-                <BattleLogPanel logs={gameState.battleLogs} />
+                <ReporterReactionPanel state={gameState} />
               </div>
             </div>
           )}
