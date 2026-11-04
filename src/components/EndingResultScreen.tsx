@@ -398,8 +398,8 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
               <Sparkles className="w-3.5 h-3.5" />
               <span>
                 {isEn
-                  ? 'PERSONAL DATA JOURNALISM FINAL REPORT'
-                  : '개인 데이터저널리즘 종합 리포트'}
+                  ? 'CRISIS RESPONSE DATA SUMMARY'
+                  : '위기대응 데이터 분석 종합 리포트'}
               </span>
             </div>
             <h3 className="font-pixel text-lg sm:text-xl text-white font-extrabold mt-0.5">

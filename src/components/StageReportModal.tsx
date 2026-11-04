@@ -61,41 +61,6 @@ export const StageReportModal: React.FC<StageReportModalProps> = ({
   const nextStageNum = Math.min(6, summary.stage + 1) as StageNumber;
   const newlyUnlocked = summary.stage < 6 ? PR_SKILLS.filter((s) => s.minStage === nextStageNum) : [];
 
-  // Narrative explanation (Section 2 requirement: explain WHICH choices shaped the outcome)
-  const buildCausalExplanation = () => {
-    if (!telSummary) {
-      return isEn
-        ? 'Stage completed based on your tactical PR sequence.'
-        : '선택하신 홍보 스킬 조합에 따라 스테이지 대응 결과가 산출되었습니다.';
-    }
-    const best = telSummary.bestMove;
-    const worst = telSummary.worstMove;
-
-    if (isEn) {
-      let text = `Starting from ${telSummary.initialPressure}% press pressure, `;
-      if (best && best.pressureDelta < 0) {
-        text += `Turn ${best.turn} [${best.skillNameEn}] delivered the decisive swing (${best.pressureDelta} pressure), `;
-      }
-      if (worst && worst.outcome === 'backfire') {
-        text += `though Turn ${worst.turn} [${worst.skillNameEn}] triggered reporter backlash (+${worst.riskDelta} RISK). `;
-      } else {
-        text += `steadily guiding press sentiment toward [${resMeta.nameEn}]. `;
-      }
-      text += `Total stage spend was ${telSummary.totalXpSpent} XP and ${telSummary.totalHpSpent} HP.`;
-      return text;
-    }
-
-    let text = `초기 보도 압박 ${telSummary.initialPressure}%에서 시작해 `;
-    if (best && best.pressureDelta < 0) {
-      text += `${best.turn}턴에 구사한 [${best.skillNameKo}] 스킬이 보도 압박을 ${best.pressureDelta}%p 낮추며 결정적 분수령을 만들었고, `;
-    }
-    if (worst && worst.outcome === 'backfire') {
-      text += `${worst.turn}턴 [${worst.skillNameKo}]에서 역풍(RISK +${worst.riskDelta})이 발생했으나 `;
-    }
-    text += `최종 압박 ${summary.finalPressure}%로 마감되어 [${resMeta.nameKo}] 결과를 달성했습니다.`;
-    return text;
-  };
-
   return (
     <div className="pixel-card p-4 sm:p-6 border-amber-400/90 space-y-5">
       {/* Top Stage Resolution Header (Metric 8) */}
@@ -133,13 +98,50 @@ export const StageReportModal: React.FC<StageReportModalProps> = ({
         </button>
       </div>
 
-      {/* Causal Data Narrative Box */}
-      <div className="bg-slate-900/95 border-l-4 border-amber-400 rounded p-3.5 text-xs sm:text-sm text-slate-100 leading-relaxed">
-        <div className="font-pixel text-[11px] text-amber-300 font-bold mb-1 flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{isEn ? 'KEY DECISION IMPACT SUMMARY' : '데이터저널리즘 분석 요약 — 어떤 선택이 결과를 갈랐나'}</span>
+      {/* Crisp Decision Summary (Clean & Compact) */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-xs font-pixel space-y-2">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+          <div className="text-amber-300 font-bold flex items-center gap-1.5 text-xs">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>{isEn ? 'DECISION IMPACT SUMMARY' : '대응 결과 핵심 분석 요약'}</span>
+          </div>
+          <span className="text-[10px] text-slate-400">
+            {isEn ? `Final Pressure: ${summary.finalPressure}%` : `최종 보도압박: ${summary.finalPressure}%`}
+          </span>
         </div>
-        <p>{buildCausalExplanation()}</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+          {telSummary?.bestMove ? (
+            <div className="bg-slate-950/80 p-2 rounded border border-emerald-500/40 text-emerald-200 flex items-center gap-2">
+              <span className="text-base">🎯</span>
+              <div>
+                <span className="text-slate-400 font-normal">{isEn ? 'Decisive Move: ' : '결정적 한 수: '}</span>
+                <b className="text-emerald-300">{isEn ? telSummary.bestMove.skillNameEn : telSummary.bestMove.skillNameKo}</b>
+                <span className="text-emerald-400 ml-1">({telSummary.bestMove.pressureDelta}%p)</span>
+              </div>
+            </div>
+          ) : null}
+
+          {telSummary?.worstMove && telSummary.worstMove.outcome === 'backfire' ? (
+            <div className="bg-slate-950/80 p-2 rounded border border-rose-500/40 text-rose-200 flex items-center gap-2">
+              <span className="text-base">💥</span>
+              <div>
+                <span className="text-slate-400 font-normal">{isEn ? 'Risk Backfire: ' : '취재 역풍: '}</span>
+                <b className="text-rose-300">{isEn ? telSummary.worstMove.skillNameEn : telSummary.worstMove.skillNameKo}</b>
+                <span className="text-rose-400 ml-1">(RISK +{telSummary.worstMove.riskDelta})</span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-950/80 p-2 rounded border border-slate-800 text-slate-300 flex items-center gap-2">
+              <span className="text-base">🛡️</span>
+              <div>
+                <span className="text-slate-400 font-normal">{isEn ? 'Resolution: ' : '대응 성과: '}</span>
+                <b className="text-sky-300">{isEn ? resMeta.nameEn : resMeta.nameKo}</b>
+                <span className="text-slate-400 ml-1">({telSummary?.logs.length || 0}턴 대응)</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Metrics 2~6: 5 Core Delta Cards */}
