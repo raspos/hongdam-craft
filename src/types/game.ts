@@ -230,6 +230,8 @@ export interface PRSkillDef {
   category: SkillCategory;
   nameKo: string;
   nameEn: string;
+  catchphraseKo: string;   // Real PR crisis action wording / punchline
+  catchphraseEn: string;
   descKo: string;
   descEn: string;
   culturalNoteEn?: string;

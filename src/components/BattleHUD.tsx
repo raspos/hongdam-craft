@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Activity, AlertTriangle, BarChart2, Flag, HelpCircle, ShieldCheck, Wallet } from 'lucide-react';
+import React from 'react';
+import { Activity, AlertTriangle, BarChart2, Flag, ShieldCheck, Wallet } from 'lucide-react';
 import { COMPANY_SCALES, INDUSTRIES } from '../data/companies';
 import { JOURNALIST_ARCHETYPES, JOURNALIST_COUNTER_SKILLS } from '../data/journalists';
 import { STAGES } from '../data/stages';
@@ -17,11 +17,9 @@ interface BattleHUDProps {
 export const BattleHUD: React.FC<BattleHUDProps> = ({
   state,
   onOpenSurvivalSim,
-  onOpenMethodology,
   onResign,
 }) => {
   const { isEn } = useLanguage();
-  const [infoTip, setInfoTip] = useState<string | null>(null);
 
   const battle = state.stageBattle;
   const scaleDef = COMPANY_SCALES[state.company.scale];
@@ -30,9 +28,9 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
   const xpRatio = Math.min(100, Math.round((state.resources.xp / Math.max(1, state.resources.initialXp)) * 100));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* Top Compact Status Strip */}
-      <div className="pixel-card p-3 sm:p-3.5 space-y-2.5">
+      <div className="pixel-card p-3 space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2 py-0.5 rounded bg-red-950 border border-red-500 font-pixel text-xs text-red-200 font-bold">
@@ -45,7 +43,7 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
               {indDef.icon} {isEn ? `${scaleDef.nameEn} · ${indDef.nameEn}` : `${scaleDef.nameKo} · ${indDef.nameKo}`}
             </span>
             <span className="text-[11px] font-pixel text-sky-300">
-              {state.player.name} {isEn ? `(${state.player.experienceYears}y PR Lead)` : `홍보팀장 (${state.player.experienceYears}년차)`}
+              {state.player.name} {isEn ? `(${state.player.experienceYears}y)` : `(${state.player.experienceYears}년차)`}
             </span>
           </div>
 
@@ -56,21 +54,10 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                 onOpenSurvivalSim();
               }}
               className="px-2 py-1 rounded bg-indigo-950/90 border border-indigo-500/80 hover:border-indigo-300 text-[11px] font-pixel text-indigo-200 flex items-center gap-1"
-              title={isEn ? 'Run Monte Carlo Survival Simulator' : '남은 스테이지 생존 시뮬레이터'}
+              title={isEn ? 'Monte Carlo Survival Odds' : '6단계 생존 확률 시뮬레이터'}
             >
               <BarChart2 className="w-3 h-3 text-indigo-400" />
               <span>{isEn ? 'Survival Odds' : '생존 확률'}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                sound.playBlip();
-                onOpenMethodology();
-              }}
-              className="p-1 rounded bg-slate-900 border border-slate-700 text-slate-400 hover:text-sky-300"
-              title={isEn ? 'How metrics are calculated' : '수치 계산 공식 보기'}
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
             </button>
 
             <button
@@ -79,7 +66,7 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                 onResign();
               }}
               className="px-2 py-1 rounded bg-slate-900 border border-slate-700 hover:border-rose-500 text-[11px] font-pixel text-slate-300 hover:text-rose-300 flex items-center gap-1"
-              title={isEn ? 'Submit Resignation (Escape Ending)' : '사표 제출 (홍담 탈출 엔딩)'}
+              title={isEn ? 'Submit Resignation' : '사표 제출'}
             >
               <Flag className="w-3 h-3" />
               <span>{isEn ? 'Resign' : '사표'}</span>
@@ -87,16 +74,13 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
           </div>
         </div>
 
-        {/* 4 Core Gauges: XP, HP, RISK, REPUTATION */}
+        {/* 4 Core Gauges: XP, HP, RISK, REPUTATION (Compact & Readable) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-pixel">
           {/* XP */}
-          <div
-            onClick={() => setInfoTip(infoTip === 'xp' ? null : 'xp')}
-            className="pixel-slot p-2 cursor-pointer hover:border-amber-500/60"
-          >
+          <div className="pixel-slot p-2">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-amber-300 flex items-center gap-1">
-                <Wallet className="w-3 h-3" /> XP {isEn ? 'Budget' : '홍보예산'} ⓘ
+                <Wallet className="w-3 h-3" /> {isEn ? 'XP Budget' : '홍보예산'}
               </span>
               <span className="font-bold text-white">{state.resources.xp}</span>
             </div>
@@ -110,14 +94,13 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
 
           {/* HP */}
           <div
-            onClick={() => setInfoTip(infoTip === 'hp' ? null : 'hp')}
-            className={`pixel-slot p-2 cursor-pointer hover:border-emerald-500/60 ${
+            className={`pixel-slot p-2 ${
               state.resources.hp <= 25 ? 'danger-pulse border-red-500' : ''
             }`}
           >
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-emerald-300 flex items-center gap-1">
-                <Activity className="w-3 h-3" /> HP {isEn ? 'Stamina' : '체력'} ⓘ
+                <Activity className="w-3 h-3" /> {isEn ? 'HP Stamina' : '체력'}
               </span>
               <span className="font-bold text-white">{state.resources.hp}/100</span>
             </div>
@@ -133,14 +116,13 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
 
           {/* RISK */}
           <div
-            onClick={() => setInfoTip(infoTip === 'risk' ? null : 'risk')}
-            className={`pixel-slot p-2 cursor-pointer hover:border-rose-500/60 ${
+            className={`pixel-slot p-2 ${
               state.resources.risk >= 75 ? 'danger-pulse border-rose-500' : ''
             }`}
           >
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-rose-300 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> RISK {isEn ? 'Backlash' : '역풍위험'} ⓘ
+                <AlertTriangle className="w-3 h-3" /> {isEn ? 'RISK Backlash' : '역풍위험'}
               </span>
               <span className="font-bold text-white">{state.resources.risk}/100</span>
             </div>
@@ -153,13 +135,10 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
           </div>
 
           {/* REPUTATION */}
-          <div
-            onClick={() => setInfoTip(infoTip === 'rep' ? null : 'rep')}
-            className="pixel-slot p-2 cursor-pointer hover:border-sky-500/60"
-          >
+          <div className="pixel-slot p-2">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-sky-300 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> {isEn ? 'Reputation' : '기업평판'} ⓘ
+                <ShieldCheck className="w-3 h-3" /> {isEn ? 'Reputation' : '기업평판'}
               </span>
               <span className="font-bold text-white">{state.resources.reputation}/100</span>
             </div>
@@ -172,43 +151,14 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
           </div>
         </div>
 
-        {/* Inline Metric Formula Explanation Tooltip (Section 7) */}
-        {infoTip && (
-          <div className="bg-slate-900 border border-sky-500/50 rounded p-2 text-[11px] text-slate-200 flex items-center justify-between">
-            <span>
-              {infoTip === 'xp' &&
-                (isEn
-                  ? 'XP (PR Budget): Scaled by corporate size (Cost mult: ' +
-                    scaleDef.xpCostMultiplier +
-                    'x). Exhaustion with no free actions triggers Transfer Game Over.'
-                  : `XP (홍보예산): 기업 규모 배율(${scaleDef.xpCostMultiplier}배)이 유료 스킬에 적용됩니다. 예산 고갈 시 타 부서 발령 게임 오버!`)}
-              {infoTip === 'hp' &&
-                (isEn
-                  ? 'HP (Stamina): Drops from overtime, stress, and drinks. Hitting 0 causes immediate Hospitalization Game Over. Use Skill #20 or #10 to recover.'
-                  : 'HP (체력): 야근·술자리·기자의 압박으로 감소하며 0이 되면 즉시 [병원 입원] 게임 오버됩니다. #20 긴급 휴식 또는 #10 법무팀 긴급 소집으로 회복 가능!')}
-              {infoTip === 'risk' &&
-                (isEn
-                  ? 'RISK (Backlash): Rises from D-category spin/lobbying. Above 45/70 triggers leak events; 100 triggers Dark PR Scandal Game Over.'
-                  : 'RISK (역풍 위험): 광고 압박·협찬·외압 등 고위험 선택 시 상승. 45·70 돌파 시 폭로 이벤트 확률 급증, 100 도달 시 즉시 게임 오버!')}
-              {infoTip === 'rep' &&
-                (isEn
-                  ? 'REPUTATION: Starts at 50. Shapes final promotion eligibility (52+ VP Promotion, 76+ Crisis Legend). Hitting 0 causes Dismissal.'
-                  : 'REPUTATION (기업 평판): 50 시작. 정정·보상·개선 시 상승하며 최종 임원 승진(52 이상) 및 전설 엔딩(76 이상)을 좌우합니다.')}
-            </span>
-            <button onClick={() => setInfoTip(null)} className="text-slate-400 hover:text-white ml-2">
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Active Buffs & Stage Pressure Bar */}
+        {/* Press Pressure Bar (Direct & Punchy) */}
         {battle && (
           <div className="pt-1 space-y-1.5">
             <div className="flex items-center justify-between text-xs font-pixel">
-              <span className="text-rose-300">
-                🔥 {isEn ? 'Press Pressure (Target ≤ 68 at Deadline, ≤ 15 Instant Drop)' : '기사 보도 압박 (마감 시 68 이하 방어 성공 · 15 이하 즉시 보도 철회!)'}
+              <span className="text-rose-300 font-bold">
+                🔥 {isEn ? 'Press Pressure (Target ≤ 68% at Deadline)' : '기사 보도 압박 (마감 시 68% 이하 유지)'}
               </span>
-              <span className="font-bold text-white">{battle.pressure}%</span>
+              <span className="font-bold text-white text-sm">{battle.pressure}%</span>
             </div>
             <div className="w-full h-3 bg-slate-950 rounded overflow-hidden border border-slate-700 relative">
               <div
@@ -221,11 +171,10 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                 }`}
                 style={{ width: `${battle.pressure}%` }}
               />
-              {/* Threshold marker at 68% */}
-              <div className="absolute top-0 bottom-0 left-[68%] w-0.5 bg-white/80" title="68% Clear Line" />
+              <div className="absolute top-0 bottom-0 left-[68%] w-0.5 bg-white/80" title="68% Defend Target" />
             </div>
 
-            {/* Active Tactical Buffs */}
+            {/* Active Tactical Buffs (Chips) */}
             <div className="flex flex-wrap gap-1.5 pt-0.5 text-[10px] font-pixel">
               {battle.buffs.factChecked && (
                 <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500 text-emerald-300">
@@ -254,12 +203,12 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
               )}
               {battle.buffs.hangoverNextTurn && (
                 <span className="px-2 py-0.5 rounded bg-rose-950 border border-rose-500 text-rose-300">
-                  🤢 {isEn ? 'Hangover (+5 HP cost)' : '숙취 디버프 (체력소모 +5)'}
+                  🤢 {isEn ? 'Hangover (+5 HP cost)' : '숙취 디버프'}
                 </span>
               )}
               {battle.buffs.dataMismatchDebuff && (
                 <span className="px-2 py-0.5 rounded bg-rose-950 border border-rose-500 text-rose-300">
-                  📉 {isEn ? 'Data Error (-28% Statement)' : '숫자 오류 (팩트체크로 해제 가능)'}
+                  📉 {isEn ? 'Data Error' : '숫자 오류 디버프'}
                 </span>
               )}
             </div>
@@ -267,22 +216,22 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
         )}
       </div>
 
-      {/* Journalist Dossier Card(s) */}
+      {/* Journalist Dossier & Dialogue Card */}
       {battle && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {battle.journalists.map((j, idx) => {
             const arch = JOURNALIST_ARCHETYPES[j.archetype];
             const nextMove = j.nextPlannedSkillId ? JOURNALIST_COUNTER_SKILLS[j.nextPlannedSkillId] : null;
             return (
               <div
                 key={j.memoryId}
-                className={`pixel-card p-3 space-y-1.5 ${
+                className={`pixel-card p-3 space-y-2 ${
                   battle.journalists.length === 1 ? 'sm:col-span-2' : ''
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{arch.badgeIcon}</span>
+                    <span className="text-xl">{arch.badgeIcon}</span>
                     <div>
                       <div className="font-pixel text-xs sm:text-sm text-white font-bold flex items-center gap-1.5 flex-wrap">
                         <span>{isEn ? `${j.nameEn} (${j.outletEn})` : `${j.outletKo} ${j.nameKo} ${j.titleKo}`}</span>
@@ -293,11 +242,11 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                         )}
                         {j.isReturning && (
                           <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 border border-purple-500 text-purple-200">
-                            🧠 {isEn ? 'Returning NPC' : '구면 재등장'}
+                            🧠 {isEn ? 'Met Before' : '구면 재등장'}
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-amber-300 font-pixel">
+                      <div className="text-[11px] text-amber-400 font-pixel">
                         {isEn ? arch.nameEn : arch.nameKo}
                       </div>
                     </div>
@@ -316,40 +265,16 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-300 bg-slate-950/80 px-2.5 py-1.5 rounded border border-slate-800 italic">
-                  {j.currentDialogueKo ? (isEn ? j.currentDialogueEn : j.currentDialogueKo) : ''}
-                </p>
-
-                {isEn && (
-                  <div className="text-[10px] text-sky-300/90">
-                    💡 K-Media Context: {arch.culturalNoteEn}
-                  </div>
-                )}
-
-                {j.isAnalyzed ? (
-                  <div className="grid grid-cols-4 gap-1 text-[10px] font-pixel pt-1 text-slate-300">
-                    <div className="bg-slate-950 px-1.5 py-1 rounded border border-slate-800">
-                      {isEn ? 'Report' : '취재력'} <b className="text-amber-300">{j.stats.reportingPower}</b>
-                    </div>
-                    <div className="bg-slate-950 px-1.5 py-1 rounded border border-slate-800">
-                      {isEn ? 'Persist' : '집요함'} <b className="text-amber-300">{j.stats.persistence}</b>
-                    </div>
-                    <div className="bg-slate-950 px-1.5 py-1 rounded border border-slate-800">
-                      {isEn ? 'Expert' : '전문성'} <b className="text-amber-300">{j.stats.expertise}</b>
-                    </div>
-                    <div className="bg-slate-950 px-1.5 py-1 rounded border border-slate-800">
-                      {isEn ? 'Distrust' : '불신도'} <b className="text-rose-300">{j.stats.distrust}</b>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[10px] text-slate-400 font-pixel">
-                    🔒 {isEn ? 'Use Skill #05 [Analyze Reporter Profile] to reveal exact stats & next move' : '스킬 #05 [기자 성향 분석] 사용 시 상세 능력치·다음 행동 공개'}
+                {/* Reporter's Current Spoken Question (Speech Bubble) */}
+                {j.currentDialogueKo && (
+                  <div className="text-xs text-amber-100 bg-slate-950 px-3 py-2 rounded border-l-2 border-rose-500 font-pixel leading-relaxed">
+                    “{isEn ? j.currentDialogueEn : j.currentDialogueKo}”
                   </div>
                 )}
 
                 {j.intentProbed && nextMove && (
-                  <div className="text-[10px] font-pixel text-indigo-300 bg-indigo-950/60 px-2 py-1 rounded border border-indigo-700">
-                    🔭 {isEn ? `Next Intended Move: ${nextMove.nameEn}` : `간파한 다음 기자 행동: [${nextMove.nameKo}]`}
+                  <div className="text-[11px] font-pixel text-indigo-300 bg-indigo-950/70 px-2.5 py-1 rounded border border-indigo-700">
+                    🔭 {isEn ? `Next Action: [${nextMove.nameEn}]` : `간파한 다음 취재 행동: [${nextMove.nameKo}]`}
                   </div>
                 )}
               </div>
