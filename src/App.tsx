@@ -6,6 +6,7 @@ import {
   initializeNewRun,
   playBattleTurn,
   proceedToNextStage,
+  retryCurrentStage,
   startStageBattle,
   triggerVoluntaryResignation,
 } from './engine/gameEngine';
@@ -28,6 +29,7 @@ import {
 import { trackFunnelStep } from './utils/funnelTracker';
 import { BambooGroveModal } from './components/BambooGroveModal';
 import { BattleHUD } from './components/BattleHUD';
+import { BeginnerTutorialGuide } from './components/BeginnerTutorialGuide';
 import { ReporterReactionPanel } from './components/ReporterReactionPanel';
 import { CharacterCreationScreen } from './components/CharacterCreationScreen';
 import { CraftUniverseNavbar } from './components/CraftUniverseNavbar';
@@ -215,6 +217,10 @@ const HongdamAppInner: React.FC = () => {
       }
       return next;
     });
+  };
+
+  const handleRetryStage = () => {
+    setGameState((prev) => retryCurrentStage(prev));
   };
 
   const handleRestartGame = () => {
@@ -478,7 +484,9 @@ const HongdamAppInner: React.FC = () => {
 
           {/* ACTIVE BATTLE PHASE (Mobile: 3D Top -> Inventory Bottom; Desktop: 2-Column) */}
           {gameState.phase === 'battle' && gameState.stageBattle && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div className="space-y-3">
+              <BeginnerTutorialGuide state={gameState} />
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* Left / Top: 3D Battle Arena + Status Chip + HUD */}
               <div className="lg:col-span-6 space-y-3">
                 <div className="h-[275px] sm:h-[360px] lg:h-[395px] w-full">
@@ -542,6 +550,7 @@ const HongdamAppInner: React.FC = () => {
                 <ReporterReactionPanel state={gameState} />
               </div>
             </div>
+          </div>
           )}
 
           {/* STAGE RESULT & ANALYTICS REPORT PHASE */}
@@ -601,6 +610,7 @@ const HongdamAppInner: React.FC = () => {
                 onOpenDataLab={() => handleSwitchView('datalab')}
                 onOpenMethodology={() => setShowMethodology(true)}
                 onRestart={handleRestartGame}
+                onRetryStage={handleRetryStage}
               />
             </div>
           )}

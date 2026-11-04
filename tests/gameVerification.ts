@@ -21,9 +21,12 @@ import {
   initializeNewRun,
   playBattleTurn,
   proceedToNextStage,
+  retryCurrentStage,
   startStageBattle,
   triggerVoluntaryResignation,
 } from '../src/engine/gameEngine';
+import { DIFFICULTY_SETTINGS } from '../src/engine/difficultyConfig';
+import { getTop3RecommendedSkills } from '../src/engine/recommendationEngine';
 import { SeededRNG } from '../src/engine/rng';
 import { evaluateSkillPreview } from '../src/engine/skillEngine';
 import { GameState, StageNumber } from '../src/types/game';
@@ -456,6 +459,43 @@ export async function runAllVerifications() {
   const pac2023MediaSum = PAC_2023_MEDIA_SHARES.reduce((s, m) => s + m.cases2023, 0);
   assert(PAC_ANNUAL_TREND.length === 4 && pac2024Sum === 3937 && pac2023MediaSum === 4085, 'Empirical Press Arbitration Commission data totals must match official reports');
 
+  // 8️⃣ 3-Tier Difficulty Modes, TOP 3 Recommendation Engine, & Stage Retry System
+  assert(
+    DIFFICULTY_SETTINGS.rookie.eventProb < DIFFICULTY_SETTINGS.normal.eventProb &&
+      DIFFICULTY_SETTINGS.normal.eventProb < DIFFICULTY_SETTINGS.veteran.eventProb,
+    'Event probability must scale properly across Rookie < Normal < Veteran'
+  );
+  assert(
+    DIFFICULTY_SETTINGS.rookie.enemyPressureMultiplier < DIFFICULTY_SETTINGS.veteran.enemyPressureMultiplier,
+    'Reporter pressure multiplier must be softened in Rookie vs Veteran'
+  );
+  assert(
+    DIFFICULTY_SETTINGS.rookie.allowStageRetry === true && DIFFICULTY_SETTINGS.veteran.allowStageRetry === false,
+    'Only Rookie mode must allow stage retries'
+  );
+
+  // Test Top 3 Recommendation Engine
+  const testRecState = startStageBattle(initializeNewRun(DEFAULT_PLAYER_PROFILE, { seed: 99999 }), 1);
+  const recs = getTop3RecommendedSkills(testRecState);
+  assert(recs.length === 3, `Top 3 recommendation must return 3 items, got ${recs.length}`);
+  assert(recs[0].rank === 1 && recs[1].rank === 2 && recs[2].rank === 3, 'Recommendations must be sorted by rank 1, 2, 3');
+  assert(recs[0].reasonKo.length > 5 && recs[0].reasonEn.length > 5, 'Recommendations must have valid non-empty reasoning');
+  assert(recs.every((r) => r.preview.usable), 'All recommended skills must be strictly usable');
+
+  // Test Stage Retry functionality
+  let retryTestState = startStageBattle(
+    initializeNewRun({ ...DEFAULT_PLAYER_PROFILE, difficulty: 'rookie' }, { seed: 88888 }),
+    1
+  );
+  const initialXp = retryTestState.resources.xp;
+  retryTestState = playBattleTurn(retryTestState, 'A01_phone_call');
+  assert(retryTestState.stageBattle!.turnNumber === 2, 'Stage turn number should advance to 2');
+  const retriedState = retryCurrentStage(retryTestState);
+  assert(retriedState.stageBattle!.turnNumber === 1, 'Stage retry must reset turn number to 1');
+  assert(retriedState.resources.xp === initialXp, 'Stage retry must restore initial stage XP');
+  assert(retriedState.phase === 'battle', 'Stage retry must put state back into battle phase');
+
+  console.log('  ✅ 3-Tier Difficulty, TOP 3 Recommendations, and Stage Retry verified.');
   console.log('  ✅ Counterfactual WHAT-IF, Monte Carlo N=1,000, Fog-of-War (#05), Same-Seed Challenge, and PAC Empirical Data verified.');
   console.log(`\n🎉 ALL ${passed} ASSERTIONS PASSED (${failed} FAILED)!`);
 }

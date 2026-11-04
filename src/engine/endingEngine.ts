@@ -124,6 +124,7 @@ export function buildEndingSummary(state: GameState, endingId: EndingId): Ending
     isVictory,
     isHidden,
     archetypeId,
+    difficulty: state.difficulty,
     finalStage: state.currentStage,
     topSkills,
     trustedCount,

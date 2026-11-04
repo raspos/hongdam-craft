@@ -4,6 +4,7 @@ import {
   Building2,
   Dices,
   Flame,
+  Gauge,
   Play,
   Save,
   ShieldAlert,
@@ -18,6 +19,7 @@ import {
   INDUSTRIES,
 } from '../data/companies';
 import { MAX_COMPANY_REROLLS } from '../engine/balanceConfig';
+import { DIFFICULTY_LIST, DIFFICULTY_SETTINGS } from '../engine/difficultyConfig';
 import { RANDOM_COMPANY_NAMES, RANDOM_PR_NAMES } from '../engine/gameEngine';
 import { useLanguage } from '../i18n/LanguageContext';
 import { AssignedCompany, PRAppearance, PRPlayerProfile } from '../types/game';
@@ -421,6 +423,62 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
                   }`}
                 >
                   {isEn ? p.labelEn : p.labelKo}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. Game Difficulty 3-Tier Mode Selector (Section 6) */}
+        <div className="pixel-slot p-3 space-y-2 text-xs">
+          <div className="flex items-center justify-between font-pixel">
+            <span className="text-slate-200 flex items-center gap-1.5">
+              <Gauge className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isEn ? 'Game Difficulty Mode' : '게임 난이도 선택'}</span>
+            </span>
+            <span className="text-amber-300 font-bold text-[11px]">
+              {DIFFICULTY_SETTINGS[profile.difficulty || 'normal']?.[isEn ? 'nameEn' : 'nameKo']}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {DIFFICULTY_LIST.map((diff) => {
+              const isSelected = (profile.difficulty || 'normal') === diff.id;
+              return (
+                <button
+                  key={diff.id}
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    onChangeProfile({
+                      ...profile,
+                      difficulty: diff.id,
+                    });
+                  }}
+                  className={`p-2.5 rounded text-left border transition-all flex flex-col justify-between ${
+                    isSelected
+                      ? 'bg-amber-950/80 border-amber-400 ring-2 ring-amber-400 shadow-md'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 text-[11px] font-pixel">
+                      <span className={`font-bold ${isSelected ? 'text-amber-300' : 'text-slate-200'}`}>
+                        {isEn ? diff.badgeEn : diff.badgeKo}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {diff.id === 'rookie' ? '×0.85' : diff.id === 'veteran' ? '×1.50' : '×1.00'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                      {isEn ? diff.descEn : diff.descKo}
+                    </p>
+                  </div>
+                  {diff.id === 'rookie' && (
+                    <span className="text-[10px] text-emerald-400 font-pixel mt-1.5 block">
+                      ✓ {isEn ? 'Retry on Game Over' : '패배 시 재도전 지원'}
+                    </span>
+                  )}
                 </button>
               );
             })}

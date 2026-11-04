@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Flame, MessageSquare, Newspaper, Send } from 'lucide-react';
+import { CheckCircle, Flame, MessageSquare, Newspaper, Send, TrendingDown } from 'lucide-react';
 import { JOURNALIST_ARCHETYPES, JOURNALIST_COUNTER_SKILLS } from '../data/journalists';
 import { PR_SKILLS_BY_ID } from '../data/skills';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -131,6 +131,128 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
               <span className="text-rose-300 font-bold shrink-0">
                 {isEn ? `Deadline: D-${battle.deadline}t` : `마감 D-${battle.deadline}턴`}
               </span>
+            </div>
+          )}
+
+          {/* 4. This Turn's Net Outcome Breakdown (Section 7) */}
+          {lastTelemetry && (
+            <div className="bg-slate-900/95 border border-slate-700/80 rounded-lg p-2.5 space-y-2 text-xs font-pixel shadow-inner">
+              <div className="flex items-center justify-between text-[11px] border-b border-slate-800 pb-1">
+                <span className="text-amber-300 font-bold flex items-center gap-1">
+                  <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isEn ? 'THIS TURN’S RESPONSE RESULT' : '이번 턴 대응 결과'}</span>
+                </span>
+                <span
+                  className={`font-bold ${
+                    lastTelemetry.netTurnDeltas.pressure <= 0 ? 'text-emerald-300' : 'text-rose-400'
+                  }`}
+                >
+                  {isEn
+                    ? `Net Shift: ${
+                        lastTelemetry.netTurnDeltas.pressure <= 0
+                          ? lastTelemetry.netTurnDeltas.pressure
+                          : `+${lastTelemetry.netTurnDeltas.pressure}`
+                      }P`
+                    : `이번 턴 순효과: ${
+                        lastTelemetry.netTurnDeltas.pressure <= 0
+                          ? lastTelemetry.netTurnDeltas.pressure
+                          : `+${lastTelemetry.netTurnDeltas.pressure}`
+                      }P`}
+                </span>
+              </div>
+
+              {/* Pressure Delta Flow: Before -> Skill Effect -> Counter -> Final */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+                <div className="bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">
+                    {isEn ? 'Before Action' : '행동 전 압박'}
+                  </span>
+                  <span className="text-slate-200 font-bold">{lastTelemetry.before.pressure}%</span>
+                </div>
+
+                <div className="bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block truncate">
+                    {isEn ? 'My Action Impact' : `${lastSkill.nameKo} 효과`}
+                  </span>
+                  <span className="text-emerald-400 font-bold">
+                    {lastTelemetry.playerSkillDeltas.pressure}P
+                  </span>
+                </div>
+
+                <div className="bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">
+                    {isEn ? 'Reporter Counter' : '기자 반격'}
+                  </span>
+                  <span className="text-rose-400 font-bold">
+                    +{Math.max(
+                      0,
+                      lastTelemetry.afterTurnComplete.pressure - lastTelemetry.afterPlayerAction.pressure
+                    )}P
+                  </span>
+                </div>
+
+                <div className="bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">
+                    {isEn ? 'Final Pressure' : '최종 보도 압박'}
+                  </span>
+                  <span
+                    className={`font-bold ${
+                      lastTelemetry.afterTurnComplete.pressure > 68
+                        ? 'text-rose-400'
+                        : 'text-emerald-400'
+                    }`}
+                  >
+                    {lastTelemetry.afterTurnComplete.pressure}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Punchy Narrative Evaluation */}
+              <div className="text-[11px] text-slate-200 bg-slate-950/80 px-2.5 py-1 rounded border border-slate-800 flex items-center justify-between">
+                <span>
+                  {lastTelemetry.netTurnDeltas.pressure < 0
+                    ? isEn
+                      ? `“Lowered press pressure by ${Math.abs(lastTelemetry.netTurnDeltas.pressure)} points.”`
+                      : `“보도 압박을 ${Math.abs(lastTelemetry.netTurnDeltas.pressure)}포인트 낮췄습니다.”`
+                    : lastTelemetry.netTurnDeltas.pressure === 0
+                      ? isEn
+                        ? `“Press pressure remained unchanged.”`
+                        : `“보도 압박 변동이 없었습니다.”`
+                      : isEn
+                        ? `“Press pressure rose by ${lastTelemetry.netTurnDeltas.pressure} points due to reporter pushback.”`
+                        : `“기자의 거센 반격으로 보도 압박이 ${lastTelemetry.netTurnDeltas.pressure}포인트 상승했습니다.”`}
+                </span>
+                {lastTelemetry.suddenEventTriggered && (
+                  <span className="text-amber-300 text-[10px] font-bold">
+                    ⚡ {isEn ? lastTelemetry.suddenEventTitleEn : lastTelemetry.suddenEventTitleKo}
+                  </span>
+                )}
+              </div>
+
+              {/* Resource Shift Chips */}
+              <div className="flex flex-wrap gap-1.5 text-[10px] text-slate-300 pt-0.5">
+                <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
+                  {isEn ? 'XP' : '예산'}: {lastTelemetry.playerSkillDeltas.xp === 0 ? '0' : `${lastTelemetry.playerSkillDeltas.xp}`}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
+                  {isEn ? 'HP' : '체력'}:{' '}
+                  {lastTelemetry.netTurnDeltas.hp > 0
+                    ? `+${lastTelemetry.netTurnDeltas.hp}`
+                    : lastTelemetry.netTurnDeltas.hp}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
+                  {isEn ? 'Trust' : '기자신뢰'}:{' '}
+                  {lastTelemetry.netTurnDeltas.trust >= 0
+                    ? `+${lastTelemetry.netTurnDeltas.trust}`
+                    : lastTelemetry.netTurnDeltas.trust}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
+                  {isEn ? 'Risk' : '역풍'}:{' '}
+                  {lastTelemetry.netTurnDeltas.risk >= 0
+                    ? `+${lastTelemetry.netTurnDeltas.risk}`
+                    : lastTelemetry.netTurnDeltas.risk}
+                </span>
+              </div>
             </div>
           )}
         </div>

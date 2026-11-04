@@ -1,6 +1,7 @@
 import { GameState } from '../types/game';
 import { SUDDEN_EVENTS, SuddenEventDef } from '../data/events';
-import { BALANCE, getExperienceModifiers } from './balanceConfig';
+import { getExperienceModifiers } from './balanceConfig';
+import { DIFFICULTY_SETTINGS } from './difficultyConfig';
 import { SeededRNG } from './rng';
 
 export function rollSuddenEvent(
@@ -17,9 +18,10 @@ export function rollSuddenEvent(
   const isSincereRemedy =
     lastSkillId === 'E17_apology_compensation' || lastSkillId === 'E19_exec_reform';
 
-  let triggerProb = BALANCE.SUDDEN_EVENT_BASE_PROB;
+  const diffConfig = DIFFICULTY_SETTINGS[state.difficulty || 'normal'] || DIFFICULTY_SETTINGS.normal;
+  let triggerProb = diffConfig.eventProb;
   if (isDrinking || isUnverifiedStatement || state.resources.risk >= 55) {
-    triggerProb = 0.62;
+    triggerProb = Math.min(0.70, diffConfig.eventProb * 1.4);
   }
 
   if (!rng.chance(triggerProb)) return null;

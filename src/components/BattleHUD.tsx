@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, AlertTriangle, BarChart2, Flag, ShieldCheck, Wallet } from 'lucide-react';
+import { Activity, AlertTriangle, BarChart2, Flag, ShieldCheck, Target, Wallet } from 'lucide-react';
 import { COMPANY_SCALES, INDUSTRIES } from '../data/companies';
 import { JOURNALIST_ARCHETYPES, JOURNALIST_COUNTER_SKILLS } from '../data/journalists';
 import { STAGES } from '../data/stages';
@@ -26,6 +26,62 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
   const indDef = INDUSTRIES[state.company.industry];
   const stageDef = STAGES[state.currentStage];
   const xpRatio = Math.min(100, Math.round((state.resources.xp / Math.max(1, state.resources.initialXp)) * 100));
+
+  const missionStatus = React.useMemo(() => {
+    if (!battle) {
+      return {
+        labelKo: '안전',
+        labelEn: 'Safe',
+        descKo: '대기 중',
+        descEn: 'Standby',
+        colorClass: 'text-emerald-300 bg-emerald-950 border-emerald-500',
+      };
+    }
+
+    const isNearGameOver =
+      battle.pressure + 12 >= 100 ||
+      state.resources.hp <= 18 ||
+      state.resources.risk >= 85 ||
+      (battle.deadline <= 1 && battle.pressure > 68);
+
+    if (isNearGameOver) {
+      return {
+        labelKo: '위기',
+        labelEn: 'Crisis',
+        descKo: '다음 행동에서 게임 오버 가능! 즉각적인 방어 필수',
+        descEn: 'Game over possible on next move! Immediate defense needed',
+        colorClass: 'text-rose-300 bg-rose-950 border-rose-500 animate-pulse',
+      };
+    }
+
+    if (battle.pressure > 68 || battle.deadline <= 2 || state.resources.hp <= 35 || state.resources.risk >= 65) {
+      return {
+        labelKo: '위험',
+        labelEn: 'Danger',
+        descKo: '마감까지 추가 대응 필요. 보도 압박을 68 이하로 낮추세요.',
+        descEn: 'Further actions required before deadline. Lower pressure below 68%.',
+        colorClass: 'text-orange-300 bg-orange-950 border-orange-500',
+      };
+    }
+
+    if (battle.pressure > 52 || battle.journalists[0]?.stats.distrust >= 60) {
+      return {
+        labelKo: '주의',
+        labelEn: 'Caution',
+        descKo: '기자 반격에 따라 실패할 수 있음. 신뢰 확보 및 팩트체크 권장',
+        descEn: 'Reporter counter-attack may flip outcome. Verify facts.',
+        colorClass: 'text-amber-300 bg-amber-950 border-amber-500',
+      };
+    }
+
+    return {
+      labelKo: '안전',
+      labelEn: 'Safe',
+      descKo: '현재 조건에서 기본 방어 성공 가능. 예산과 체력을 비축하세요.',
+      descEn: 'Basic defense secure under current condition. Conserve resources.',
+      colorClass: 'text-emerald-300 bg-emerald-950 border-emerald-500',
+    };
+  }, [battle, state.resources.hp, state.resources.risk]);
 
   return (
     <div className="space-y-2.5">
@@ -73,6 +129,76 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Primary Crisis Mission & Defense Objective Bar (Section 3) */}
+        {battle && (
+          <div className="bg-slate-900/95 border-2 border-amber-500/80 rounded-lg p-2.5 sm:p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-rose-400" />
+                <span className="font-pixel text-xs sm:text-sm text-white font-bold">
+                  {isEn ? `[CRISIS: ${stageDef.titleEn}]` : `[현재 위기: ${stageDef.titleKo}]`}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-pixel text-slate-400">
+                  {isEn ? 'Status:' : '현재 상태:'}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded font-pixel text-[11px] font-bold border ${missionStatus.colorClass}`}
+                >
+                  {isEn ? missionStatus.labelEn : missionStatus.labelKo}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-pixel">
+              <div className="bg-slate-950 px-2.5 py-1.5 rounded border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">
+                  {isEn ? 'Press Pressure' : '현재 보도 압박'}
+                </span>
+                <span
+                  className={`text-base font-bold ${
+                    battle.pressure > 68 ? 'text-rose-400' : 'text-emerald-400'
+                  }`}
+                >
+                  {battle.pressure}%
+                </span>
+              </div>
+
+              <div className="bg-slate-950 px-2.5 py-1.5 rounded border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">
+                  {isEn ? 'Defense Target' : '방어 목표'}
+                </span>
+                <span className="text-base font-bold text-amber-300">
+                  {isEn ? '≤ 68% or below' : '68% 이하'}
+                </span>
+              </div>
+
+              <div className="bg-slate-950 px-2.5 py-1.5 rounded border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">
+                  {isEn ? 'Deadline' : '마감까지'}
+                </span>
+                <span
+                  className={`text-base font-bold ${
+                    battle.deadline <= 1 ? 'text-rose-400 animate-pulse' : 'text-sky-300'
+                  }`}
+                >
+                  D-{battle.deadline}턴
+                </span>
+              </div>
+
+              <div className="bg-slate-950 px-2.5 py-1.5 rounded border border-slate-800 flex flex-col justify-center">
+                <span className="text-slate-400 text-[10px] block">
+                  {isEn ? 'Assessment' : '상황 진단'}
+                </span>
+                <span className="text-[11px] font-medium text-slate-200 line-clamp-1">
+                  {isEn ? missionStatus.descEn : missionStatus.descKo}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 4 Core Gauges: XP, HP, RISK, REPUTATION (Compact & Readable) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-pixel">

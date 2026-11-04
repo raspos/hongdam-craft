@@ -1,6 +1,7 @@
 import {
   ActiveJournalist,
   CompanyScaleId,
+  DifficultyLevel,
   JournalistArchetypeId,
   JournalistCounterSkillId,
   JournalistMemoryRecord,
@@ -17,6 +18,7 @@ import {
 } from '../data/journalists';
 import { STAGES } from '../data/stages';
 import { BALANCE, clamp, getExperienceModifiers } from './balanceConfig';
+import { DIFFICULTY_SETTINGS } from './difficultyConfig';
 import { SeededRNG } from './rng';
 
 function pickOutletForArchetype(archetype: JournalistArchetypeId, rng: SeededRNG) {
@@ -268,7 +270,8 @@ export function executeJournalistCounterTurn(
   companyScale: CompanyScaleId,
   pressureMultiplier: number,
   accumulatedRisk: number,
-  rng: SeededRNG
+  rng: SeededRNG,
+  difficulty?: DifficultyLevel
 ): {
   skillId: JournalistCounterSkillId;
   actorNameKo: string;
@@ -293,6 +296,7 @@ export function executeJournalistCounterTurn(
   const counterDef = JOURNALIST_COUNTER_SKILLS[skillId];
 
   const stageScale = BALANCE.STAGE_ENEMY_SCALE[battle.stage];
+  const diffSetting = DIFFICULTY_SETTINGS[difficulty || 'normal'] || DIFFICULTY_SETTINGS.normal;
   const statFactor =
     0.72 +
     (actor.stats.reportingPower * 0.0022) +
@@ -309,6 +313,7 @@ export function executeJournalistCounterTurn(
   let rawPressure =
     counterDef.pressureGain *
     stageScale *
+    diffSetting.enemyPressureMultiplier *
     Math.max(0.45, statFactor) *
     pressureMultiplier *
     coBonus *

@@ -11,6 +11,7 @@ import {
   MessageSquarePlus,
   RotateCcw,
   Share2,
+  ShieldAlert,
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ import {
   buildEndingViralDiagnosis,
   shareOrCopyChallenge,
 } from '../utils/challengeShare';
+import { DIFFICULTY_SETTINGS } from '../engine/difficultyConfig';
 import { trackFunnelStep } from '../utils/funnelTracker';
 import { sound } from '../utils/sound';
 
@@ -39,6 +41,7 @@ interface EndingResultScreenProps {
   onOpenDataLab: () => void;
   onOpenMethodology: () => void;
   onRestart: () => void;
+  onRetryStage?: () => void;
 }
 
 export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
@@ -50,6 +53,7 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
   onOpenDataLab,
   onOpenMethodology,
   onRestart,
+  onRetryStage,
 }) => {
   const { isEn } = useLanguage();
   const endSum = state.endingSummary;
@@ -122,6 +126,63 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
     return runWhatIfFullStrategy(state, targetStg, altPol);
   }, [state, endSum]);
 
+  const failureDiagnosis = useMemo(() => {
+    if (!endSum) return null;
+    const endDef = ENDINGS[endSum.endingId];
+    if (endDef?.isVictory) return null;
+
+    let rootCauseKo = '';
+    let rootCauseEn = '';
+    let adviceKo = '';
+    let adviceEn = '';
+
+    switch (endSum.endingId) {
+      case 'ending_budget_exhausted':
+        rootCauseKo = '홍보예산(XP) 완전 고갈 — 위기 대응에 필요한 예산이 바닥나 더 이상 스킬을 실행할 수 없었습니다.';
+        rootCauseEn = 'XP Exhaustion — PR budget completely depleted, making further tactical responses impossible.';
+        adviceKo = 'XP 소모가 없는 무료 스킬(기자에게 전화 등)을 적절히 섞고, C09(긴급 예비비 확보)나 C12(그룹 오너 찬스)를 적극 활용하세요.';
+        adviceEn = 'Mix in free skills like phone calls, and utilize C09 (Emergency Budget) or C12 (Owner Banquet) to replenish XP.';
+        break;
+      case 'ending_overwork_hospital':
+        rootCauseKo = '과로 누적 및 응급실 이송(HP 0) — 잇따른 취재 대응과 야근 스트레스로 홍보팀장 체력이 바닥났습니다.';
+        rootCauseEn = 'Overwork Collapse (HP 0) — Continuous overtime stress depleted PR Lead stamina to zero.';
+        adviceKo = '체력이 35 이하로 떨어지면 A02(커피/점심 미팅)나 E20(병가 및 긴급 수액)으로 즉시 체력을 보충하세요.';
+        adviceEn = 'When stamina drops below 35, prioritize A02 (Coffee Lunch) or E20 (Emergency Leave) to restore HP.';
+        break;
+      case 'ending_lobby_exposed':
+        rootCauseKo = '외압 및 불법 로비 역풍(RISK 100) — 위험 수위가 높은 암수(광고 압박, 법무 경고 등)를 남발하다 내부 폭로가 터졌습니다.';
+        rootCauseEn = 'Lobby Exposure (RISK 100) — Excessive high-risk press suppression triggered a massive public whistleblower leak.';
+        adviceKo = 'D계열(광고 집행, 기사 보류 요청 등) 스킬은 역풍 위험을 높입니다. E계열 사과/쇄신 스킬로 리스크를 정기적으로 낮추세요.';
+        adviceEn = 'Category D dark PR raises RISK. Counterbalance with Category E sincere apology/reforms to purge risk.';
+        break;
+      case 'ending_owner_scapegoat':
+        rootCauseKo = '보도 압박 방어 실패(마감 68% 초과) 및 평판 붕괴 — 데스크 마감 전에 기사 압박을 낮추지 못해 왜곡 보도가 전파되었습니다.';
+        rootCauseEn = 'Deadline Defense Failure (Pressure > 68%) — Failed to lower press pressure before deadline, causing damaging headlines.';
+        adviceKo = 'B05(사내 팩트체크)를 선행한 후 A04(공식 해명자료)나 E18(팩트 정정)을 사용하면 보도 압박 감소율이 45% 급증합니다.';
+        adviceEn = 'Verify facts with B05 first before issuing statements to gain a massive +45% reduction synergy.';
+        break;
+      case 'ending_resignation_escape':
+      default:
+        rootCauseKo = '위기대응 중단 — 사직서를 제출하고 전선을 이탈했습니다.';
+        rootCauseEn = 'PR Resignation — Voluntarily resigned from the war room.';
+        adviceKo = '기자의 성향과 상성을 파악하고 추천 대응 스킬 TOP 3를 참고하면 난관을 돌파할 수 있습니다.';
+        adviceEn = 'Study reporter archetypes and utilize TOP 3 Recommended Actions to overcome deadlock.';
+        break;
+    }
+
+    const worstTurn = [...logs].sort(
+      (a, b) => b.playerSkillDeltas.pressure - a.playerSkillDeltas.pressure
+    )[0];
+
+    return {
+      rootCauseKo,
+      rootCauseEn,
+      adviceKo,
+      adviceEn,
+      worstTurn,
+    };
+  }, [endSum, logs]);
+
   if (!endSum) return null;
 
   const endDef = ENDINGS[endSum.endingId];
@@ -129,6 +190,12 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
   const scaleDef = COMPANY_SCALES[state.company.scale];
   const indDef = INDUSTRIES[state.company.industry];
   const viralDiag = buildEndingViralDiagnosis(state);
+
+  const canRetryStage =
+    !endDef.isVictory &&
+    Boolean(onRetryStage) &&
+    (state.difficulty === 'rookie' ||
+      DIFFICULTY_SETTINGS[state.difficulty || 'normal']?.allowStageRetry);
 
   const handleViralChallengeShare = async () => {
     sound.playClick();
@@ -271,6 +338,74 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
         <div className="text-xs sm:text-sm font-pixel text-amber-300 italic text-center py-1">
           {isEn ? endDef.quoteEn : endDef.quoteKo}
         </div>
+
+        {/* Failure Diagnosis & Strategic Advice Card (Section 8) */}
+        {failureDiagnosis && (
+          <div className="bg-rose-950/80 border-2 border-rose-500 rounded-lg p-4 space-y-3 font-pixel">
+            <div className="flex items-center justify-between border-b border-rose-800/80 pb-2">
+              <span className="text-sm font-bold text-rose-200 flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <span>{isEn ? 'CRISIS FAILURE DIAGNOSIS & RECOVERY ADVICE' : '위기대응 실패 원인 정밀 진단'}</span>
+              </span>
+              <span className="text-[11px] text-rose-300">
+                STAGE {state.currentStage}/6
+              </span>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="bg-slate-950/80 p-2.5 rounded border border-rose-900/60">
+                <span className="text-amber-400 font-bold block mb-0.5">
+                  📌 {isEn ? 'Core Failure Cause:' : '핵심 실패 원인:'}
+                </span>
+                <span className="text-slate-200 leading-relaxed font-sans font-medium">
+                  {isEn ? failureDiagnosis.rootCauseEn : failureDiagnosis.rootCauseKo}
+                </span>
+              </div>
+
+              {failureDiagnosis.worstTurn && (
+                <div className="bg-slate-950/80 p-2.5 rounded border border-rose-900/60 text-[11px]">
+                  <span className="text-rose-400 font-bold block mb-0.5">
+                    ⚡ {isEn ? 'Critical Turning Point:' : '결정적 패착 순간:'}
+                  </span>
+                  <span className="text-slate-300 font-sans">
+                    {isEn
+                      ? `Stage ${failureDiagnosis.worstTurn.stage}, Turn ${failureDiagnosis.worstTurn.stageTurn}: Pressure shifted by ${failureDiagnosis.worstTurn.netTurnDeltas.pressure >= 0 ? `+${failureDiagnosis.worstTurn.netTurnDeltas.pressure}` : failureDiagnosis.worstTurn.netTurnDeltas.pressure}P.`
+                      : `STAGE ${failureDiagnosis.worstTurn.stage}의 ${failureDiagnosis.worstTurn.stageTurn}번째 턴: 기자의 반격으로 보도 압박이 ${failureDiagnosis.worstTurn.netTurnDeltas.pressure >= 0 ? `+${failureDiagnosis.worstTurn.netTurnDeltas.pressure}` : failureDiagnosis.worstTurn.netTurnDeltas.pressure}포인트 요동치며 전세가 역전되었습니다.`}
+                  </span>
+                </div>
+              )}
+
+              <div className="bg-slate-950/80 p-2.5 rounded border border-emerald-900/60">
+                <span className="text-emerald-400 font-bold block mb-0.5">
+                  💡 {isEn ? 'Strategic Advice for Next Run:' : '다음 플레이를 위한 핵심 조언:'}
+                </span>
+                <span className="text-slate-200 leading-relaxed font-sans font-medium">
+                  {isEn ? failureDiagnosis.adviceEn : failureDiagnosis.adviceKo}
+                </span>
+              </div>
+            </div>
+
+            {canRetryStage && onRetryStage && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playSuccess();
+                    onRetryStage();
+                  }}
+                  className="pixel-btn-mc pixel-btn-mc-primary w-full py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>
+                    {isEn
+                      ? `Retry STAGE ${state.currentStage} with Restored Resources (Rookie Mode)`
+                      : `[초보 모드 혜택] 이번 STAGE ${state.currentStage} 다시 도전하기 (자원 복원)`}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Item 12: PR Chief Style Card */}
         <div className="bg-slate-900/95 border-2 border-amber-500/60 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -694,6 +829,23 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
         {/* Bottom Navigation Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2">
           <div className="flex flex-wrap gap-2">
+            {canRetryStage && onRetryStage && (
+              <button
+                onClick={() => {
+                  sound.playSuccess();
+                  onRetryStage();
+                }}
+                className="pixel-btn-mc pixel-btn-mc-primary px-4 py-2.5 text-xs font-bold text-white border-amber-400 flex items-center gap-1.5 shadow-md"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>
+                  {isEn
+                    ? `Retry STAGE ${state.currentStage}`
+                    : `STAGE ${state.currentStage} 재도전 (초보 모드)`}
+                </span>
+              </button>
+            )}
+
             {autoWhatIf && (
               <button
                 onClick={() => onOpenWhatIf(autoWhatIf.stage)}

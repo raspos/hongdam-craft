@@ -1,5 +1,7 @@
 export type Language = 'ko' | 'en';
 
+export type DifficultyLevel = 'rookie' | 'normal' | 'veteran';
+
 export type CompanyScaleId = 'startup' | 'sme' | 'midsize' | 'large' | 'chaebol';
 
 export type IndustryId =
@@ -39,6 +41,7 @@ export interface PRPlayerProfile {
   companyName: string;
   resemblesRealCompany: boolean;
   experienceYears: number;
+  difficulty?: DifficultyLevel;
   rankKo: '홍보팀장';
   rankEn: 'PR Team Lead';
   appearance: PRAppearance;
@@ -366,6 +369,7 @@ export interface EndingSummary {
   isVictory: boolean;
   isHidden: boolean;
   archetypeId: PRArchetypeId;
+  difficulty?: DifficultyLevel;
   finalStage: StageNumber;
   topSkills: { skillId: string; count: number }[];
   trustedCount: number;
@@ -408,6 +412,7 @@ export interface GameState {
   seed: number;
   rngState: number;
   phase: GamePhase;
+  difficulty?: DifficultyLevel;
   player: PRPlayerProfile;
   company: AssignedCompany;
   resources: ResourcesState;

@@ -141,6 +141,7 @@ export function createPlaceholderGameState(): GameState {
     seed,
     rngState: seed,
     phase: 'character_create',
+    difficulty: 'normal',
     player: createRandomPlayerProfile(),
     company: {
       scale: 'midsize',
@@ -229,12 +230,15 @@ export function initializeNewRun(
     s.minStage === 1 || (s.minStage === 2 && s.category === 'B' && baseStageUnlock >= 2)
   ).map((s) => s.id);
 
+  const diff = profileInput.difficulty || 'normal';
+
   return {
     version: GAME_STATE_VERSION,
     playId: `run_${seed}_${Date.now()}`,
     seed,
     rngState: rng.state,
     phase: 'company_assigned',
+    difficulty: diff,
     player,
     company,
     resources: {
@@ -586,7 +590,8 @@ export function playBattleTurn(
       next.company.scale,
       next.company.pressureMultiplier,
       next.resources.risk,
-      rng
+      rng,
+      next.difficulty
     );
     enemySkillUsed = counter.skillId;
     battle.journalists[0].nextPlannedSkillId = counter.nextPlannedSkillId;
@@ -786,4 +791,41 @@ export function proceedToNextStage(state: GameState, opts?: { fastSim?: boolean 
   }
   const nextStage = (state.currentStage + 1) as StageNumber;
   return startStageBattle(state, nextStage, opts);
+}
+
+export function retryCurrentStage(state: GameState): GameState {
+  const stage = state.currentStage;
+  const snapshot = state.stageSnapshots[stage];
+  if (!snapshot) {
+    // Fallback: re-initialize stage battle fresh
+    return startStageBattle(state, stage);
+  }
+
+  const next = deepClone(state);
+  next.phase = 'battle';
+  next.endingSummary = null;
+  next.currentStage = stage;
+  next.rngState = snapshot.rngStateAtStart;
+  next.resources = deepClone(snapshot.resourcesAtStart);
+  next.stageBattle = deepClone(snapshot.stageBattleAtStart);
+  next.journalistPool = deepClone(snapshot.journalistPoolAtStart);
+  next.unlockedSkillIds = [...snapshot.unlockedSkillIdsAtStart];
+  next.skillUsageCounts = { ...snapshot.skillUsageCountsAtStart };
+  next.stageHistory = next.stageHistory.filter((h) => h.stage < stage);
+  next.lastStageSummary = next.stageHistory[next.stageHistory.length - 1] || null;
+  next.telemetryLogs = next.telemetryLogs.filter((t) => t.stage < stage);
+
+  const introLog: BattleLogEntry = {
+    id: `log_stg${stage}_retry_${Date.now()}`,
+    turn: 0,
+    actor: 'system',
+    titleKo: `🔄 [초보 모드 재도전] STAGE ${stage} 위기 대응 재시작`,
+    titleEn: `🔄 [Rookie Mode Retry] STAGE ${stage} Restarted`,
+    bodyKo: `직전 실패 원인을 분석하여 동일한 조건에서 다시 시작합니다. 예산과 체력이 복원되었습니다.`,
+    bodyEn: `Restarting stage with restored resources based on failure analysis.`,
+    tone: 'warn',
+  };
+  next.battleLogs = [introLog];
+
+  return next;
 }
