@@ -296,12 +296,8 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
                 ) : null}
               </div>
 
-              <div className="font-pixel text-xs text-white font-bold leading-snug my-1 line-clamp-1">
+              <div className="font-pixel text-xs text-white font-bold leading-snug my-1 line-clamp-2">
                 {isEn ? sk.nameEn : sk.nameKo}
-              </div>
-
-              <div className="text-[10px] text-slate-400 font-pixel line-clamp-1 italic mb-1">
-                {isEn ? sk.catchphraseEn : sk.catchphraseKo}
               </div>
 
               <div className="flex items-center justify-between text-[10px] font-pixel border-t border-slate-800/80 pt-1">
