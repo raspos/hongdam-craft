@@ -185,13 +185,9 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
           </div>
 
           {/* Prominent PR Crisis Action Wording (핵심 워딩) */}
-          <div className="bg-slate-900/90 border-l-4 border-amber-400 px-3 py-2 rounded-r shadow-inner">
-            <div className="text-[10px] font-pixel text-amber-400 font-bold mb-0.5 flex items-center gap-1">
-              <span>💬</span>
-              <span>{isEn ? 'CORE PR CRISIS WORDING' : '대응 핵심 워딩 & 브리핑 멘트'}</span>
-            </div>
-            <div className="font-pixel text-xs sm:text-sm text-slate-100 font-bold leading-relaxed">
-              {isEn ? focusedSkill.catchphraseEn : focusedSkill.catchphraseKo}
+          <div className="bg-slate-900/90 border-l-4 border-amber-400 px-3 py-2.5 rounded-r shadow-inner">
+            <div className="font-pixel text-xs sm:text-sm text-amber-100 font-bold leading-relaxed">
+              💬 {isEn ? focusedSkill.catchphraseEn : focusedSkill.catchphraseKo}
             </div>
           </div>
 
