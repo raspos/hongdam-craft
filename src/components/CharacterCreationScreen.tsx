@@ -17,7 +17,7 @@ import {
   EXEC_TRAITS,
   INDUSTRIES,
 } from '../data/companies';
-import { getExperienceModifiers, MAX_COMPANY_REROLLS } from '../engine/balanceConfig';
+import { MAX_COMPANY_REROLLS } from '../engine/balanceConfig';
 import { useLanguage } from '../i18n/LanguageContext';
 import { AssignedCompany, PRAppearance, PRPlayerProfile } from '../types/game';
 import { IncomingChallengeParams } from '../utils/challengeShare';
@@ -93,7 +93,6 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
   onOpenSimulator,
 }) => {
   const { isEn } = useLanguage();
-  const expMod = getExperienceModifiers(profile.experienceYears);
   const resemblesReal = checkResemblesRealCompany(profile.companyName);
 
   const rollRandomName = () => {
@@ -409,11 +408,11 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
           </div>
         </div>
 
-        {/* 2. PR Experience Years Slider & Quick Tenure Presets */}
+        {/* 2. PR Experience Years: 3 Quick Presets (Gauge Removed) */}
         <div className="pixel-slot p-3 space-y-2 text-xs">
           <div className="flex items-center justify-between font-pixel">
             <span className="text-slate-200">
-              {isEn ? 'PR Career Experience (Tenure)' : '홍보 경력 (연차 선택)'}
+              {isEn ? 'PR Career Tenure' : '홍보팀장 경력'}
             </span>
             <span className="text-amber-300 font-bold text-sm">
               {isEn
@@ -422,7 +421,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
             </span>
           </div>
 
-          {/* Quick Tenure Presets (mirrors Personnel Craft while keeping custom name/company intact!) */}
+          {/* Quick Tenure Buttons */}
           <div className="grid grid-cols-3 gap-1.5">
             {[
               { yrs: 3, labelKo: '🔥 3년차 (신임 팀장)', labelEn: '🔥 3y Rookie Lead', suit: '#1e3a8a', hair: 'neat' as const },
@@ -445,29 +444,6 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
                 </button>
               );
             })}
-          </div>
-
-          <input
-            type="range"
-            min={1}
-            max={20}
-            value={profile.experienceYears}
-            onChange={(e) =>
-              onChangeProfile({ ...profile, experienceYears: parseInt(e.target.value, 10) || 1 })
-            }
-            className="w-full accent-amber-500 cursor-pointer"
-          />
-          <div className="flex flex-wrap justify-between text-[11px] text-slate-400 gap-1 font-pixel">
-            <span>
-              {isEn
-                ? `Skill Proficiency: +${Math.round(expMod.skillProficiencyBonus * 100)}%`
-                : `스킬 숙련 보너스: +${Math.round(expMod.skillProficiencyBonus * 100)}%`}
-            </span>
-            <span>
-              {isEn
-                ? `Initial Reporter Trust: +${expMod.initialTrustBonus}`
-                : `기자 초기 친밀도: +${expMod.initialTrustBonus}`}
-            </span>
           </div>
         </div>
 
