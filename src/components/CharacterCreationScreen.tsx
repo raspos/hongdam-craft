@@ -18,6 +18,7 @@ import {
   INDUSTRIES,
 } from '../data/companies';
 import { MAX_COMPANY_REROLLS } from '../engine/balanceConfig';
+import { RANDOM_COMPANY_NAMES, RANDOM_PR_NAMES } from '../engine/gameEngine';
 import { useLanguage } from '../i18n/LanguageContext';
 import { AssignedCompany, PRAppearance, PRPlayerProfile } from '../types/game';
 import { IncomingChallengeParams } from '../utils/challengeShare';
@@ -53,27 +54,6 @@ const HAIR_STYLES: { id: PRAppearance['hairStyle']; ko: string; en: string }[] =
   { id: 'parted', ko: '댄디 컷', en: 'Side Part' },
   { id: 'short', ko: '짧은 스포츠', en: 'Short Crop' },
   { id: 'bob', ko: '칼단발', en: 'Sharp Bob' },
-];
-
-const RANDOM_PR_NAMES = [
-  '김홍담',
-  '최마감',
-  '박해명',
-  '이정정',
-  '강반론',
-  '안수습',
-  '정위기',
-  '한특종',
-  '오대응',
-];
-
-const RANDOM_COMPANY_NAMES = [
-  '한빛테크놀로지',
-  '미래바이오',
-  '네오엔터테인먼트',
-  '대산물산',
-  '코리아모빌리티',
-  '태양건설',
 ];
 
 export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({

@@ -220,10 +220,7 @@ const HongdamAppInner: React.FC = () => {
   const handleRestartGame = () => {
     const fresh = clearSavedGameState();
     setRerollsLeft(MAX_COMPANY_REROLLS);
-    setGameState((prev) => ({
-      ...fresh,
-      player: prev.player,
-    }));
+    setGameState(fresh);
     handleSwitchView('game');
   };
 

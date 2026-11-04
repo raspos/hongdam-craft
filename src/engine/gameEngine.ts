@@ -64,6 +64,50 @@ export const DEFAULT_PLAYER_PROFILE: PRPlayerProfile = {
   },
 };
 
+export const RANDOM_PR_NAMES: string[] = [
+  '김홍담',
+  '최마감',
+  '박해명',
+  '이정정',
+  '강반론',
+  '안수습',
+  '정위기',
+  '한특종',
+  '오대응',
+  '조소명',
+  '배엠바고',
+  '윤단독',
+];
+
+export const RANDOM_COMPANY_NAMES: string[] = [
+  '한빛테크놀로지',
+  '미래바이오',
+  '네오엔터테인먼트',
+  '대산물산',
+  '코리아모빌리티',
+  '태양건설',
+  '성원전자',
+  '청룡화학',
+  '아침식품',
+  '은하소프트',
+];
+
+export function getRandomPRName(): string {
+  return RANDOM_PR_NAMES[Math.floor(Math.random() * RANDOM_PR_NAMES.length)];
+}
+
+export function getRandomCompanyName(): string {
+  return RANDOM_COMPANY_NAMES[Math.floor(Math.random() * RANDOM_COMPANY_NAMES.length)];
+}
+
+export function createRandomPlayerProfile(): PRPlayerProfile {
+  return {
+    ...DEFAULT_PLAYER_PROFILE,
+    name: getRandomPRName(),
+    companyName: getRandomCompanyName(),
+  };
+}
+
 export function createEmptyBuffs(): StageBuffs {
   return {
     factChecked: false,
@@ -97,7 +141,7 @@ export function createPlaceholderGameState(): GameState {
     seed,
     rngState: seed,
     phase: 'character_create',
-    player: { ...DEFAULT_PLAYER_PROFILE },
+    player: createRandomPlayerProfile(),
     company: {
       scale: 'midsize',
       industry: 'platform',
@@ -148,8 +192,8 @@ export function initializeNewRun(
   const seed = (options?.seed ?? ((Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0)) || 987654321;
   const rng = new SeededRNG(seed);
 
-  const cleanCompanyName = profileInput.companyName.trim() || '한빛그룹';
-  const cleanPlayerName = profileInput.name.trim() || '김홍담';
+  const cleanCompanyName = profileInput.companyName.trim() || getRandomCompanyName();
+  const cleanPlayerName = profileInput.name.trim() || getRandomPRName();
 
   const player: PRPlayerProfile = {
     ...profileInput,
