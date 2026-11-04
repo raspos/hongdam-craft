@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity, AlertTriangle, BarChart2, Flag, ShieldCheck, Target, Wallet } from 'lucide-react';
 import { COMPANY_SCALES, INDUSTRIES } from '../data/companies';
+import { DIFFICULTY_SETTINGS } from '../engine/difficultyConfig';
 import { STAGES } from '../data/stages';
 import { useLanguage } from '../i18n/LanguageContext';
 import { GameState } from '../types/game';
@@ -25,6 +26,7 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
   const indDef = INDUSTRIES[state.company.industry];
   const stageDef = STAGES[state.currentStage];
   const xpRatio = Math.min(100, Math.round((state.resources.xp / Math.max(1, state.resources.initialXp)) * 100));
+  const diffSetting = DIFFICULTY_SETTINGS[state.difficulty || 'normal'] || DIFFICULTY_SETTINGS.normal;
 
   const missionStatus = React.useMemo(() => {
     if (!battle) {
@@ -98,7 +100,7 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
               {indDef.icon} {isEn ? `${scaleDef.nameEn} · ${indDef.nameEn}` : `${scaleDef.nameKo} · ${indDef.nameKo}`}
             </span>
             <span className="text-[11px] font-pixel text-sky-300">
-              {state.player.name} {isEn ? `(${state.player.experienceYears}y)` : `(${state.player.experienceYears}년차)`}
+              {state.player.name} · {isEn ? diffSetting.badgeEn : diffSetting.badgeKo}
             </span>
           </div>
 

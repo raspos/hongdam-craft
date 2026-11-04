@@ -11,6 +11,7 @@ import {
   triggerVoluntaryResignation,
 } from './engine/gameEngine';
 import { STAGE_RESOLUTION_META } from './engine/progressionEngine';
+import { DIFFICULTY_SETTINGS } from './engine/difficultyConfig';
 import { useLanguage } from './i18n/LanguageContext';
 import { LanguageProvider } from './i18n/LanguageProvider';
 import {
@@ -519,8 +520,7 @@ const HongdamAppInner: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-slate-100 font-bold">
-                      {gameState.player.companyName} · {gameState.player.name} ({gameState.player.experienceYears}
-                      {isEn ? 'y' : '년차'})
+                      {gameState.player.companyName} · {gameState.player.name} · {DIFFICULTY_SETTINGS[gameState.difficulty || 'normal']?.[isEn ? 'badgeEn' : 'badgeKo'] || '💼 전략 팀장'}
                     </span>
                   </div>
                   <div className="text-amber-300 bg-slate-950 px-2.5 py-0.5 rounded border border-slate-800">

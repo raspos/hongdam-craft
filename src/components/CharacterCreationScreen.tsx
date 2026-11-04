@@ -91,19 +91,6 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
     onChangeProfile({ ...profile, companyName: chosen });
   };
 
-  const applyTenurePreset = (years: number, suit?: string, hair?: PRAppearance['hairStyle']) => {
-    sound.playBlip();
-    onChangeProfile({
-      ...profile,
-      experienceYears: years,
-      appearance: {
-        ...profile.appearance,
-        ...(suit ? { suitColor: suit } : {}),
-        ...(hair ? { hairStyle: hair } : {}),
-      },
-    });
-  };
-
   if (phase === 'company_assigned') {
     const scaleDef = COMPANY_SCALES[company.scale];
     const indDef = INDUSTRIES[company.industry];
@@ -390,51 +377,12 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
           </div>
         </div>
 
-        {/* 2. PR Experience Years: 3 Quick Presets (Gauge Removed) */}
-        <div className="pixel-slot p-3 space-y-2 text-xs">
-          <div className="flex items-center justify-between font-pixel">
-            <span className="text-slate-200">
-              {isEn ? 'PR Career Tenure' : '홍보팀장 경력'}
-            </span>
-            <span className="text-amber-300 font-bold text-sm">
-              {isEn
-                ? `Year ${profile.experienceYears} · PR Team Lead`
-                : `${profile.experienceYears}년차 홍보팀장`}
-            </span>
-          </div>
-
-          {/* Quick Tenure Buttons */}
-          <div className="grid grid-cols-3 gap-1.5">
-            {[
-              { yrs: 3, labelKo: '🔥 3년차 (신임 팀장)', labelEn: '🔥 3y Rookie Lead', suit: '#1e3a8a', hair: 'neat' as const },
-              { yrs: 7, labelKo: '🦅 7년차 (전략 에이스)', labelEn: '🦅 7y Crisis Ace', suit: '#1e293b', hair: 'bob' as const },
-              { yrs: 11, labelKo: '☕ 11년차 (야근 베테랑)', labelEn: '☕ 11y Overtime Vet', suit: '#374151', hair: 'short' as const },
-            ].map((p) => {
-              const active = profile.experienceYears === p.yrs;
-              return (
-                <button
-                  key={p.yrs}
-                  type="button"
-                  onClick={() => applyTenurePreset(p.yrs, p.suit, p.hair)}
-                  className={`py-1.5 px-2 rounded text-[11px] font-pixel border transition-all ${
-                    active
-                      ? 'bg-amber-600 text-white font-bold border-amber-300 shadow-sm'
-                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:border-slate-600'
-                  }`}
-                >
-                  {isEn ? p.labelEn : p.labelKo}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 3. Game Difficulty 3-Tier Mode Selector (Section 6) */}
+        {/* 2. PR Team Lead Persona & Game Difficulty Mode */}
         <div className="pixel-slot p-3 space-y-2 text-xs">
           <div className="flex items-center justify-between font-pixel">
             <span className="text-slate-200 flex items-center gap-1.5">
               <Gauge className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isEn ? 'Game Difficulty Mode' : '게임 난이도 선택'}</span>
+              <span>{isEn ? 'PR Team Lead Persona & Difficulty' : '홍보팀장 유형 & 난이도'}</span>
             </span>
             <span className="text-amber-300 font-bold text-[11px]">
               {DIFFICULTY_SETTINGS[profile.difficulty || 'normal']?.[isEn ? 'nameEn' : 'nameKo']}
@@ -453,6 +401,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
                     onChangeProfile({
                       ...profile,
                       difficulty: diff.id,
+                      experienceYears: diff.defaultYears,
                     });
                   }}
                   className={`p-2.5 rounded text-left border transition-all flex flex-col justify-between ${
@@ -653,8 +602,8 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
           </span>
           <span className="text-amber-300/90">
             {isEn
-              ? `Active: ${profile.name} (${profile.experienceYears}y)`
-              : `현재 설정: ${profile.name} (${profile.experienceYears}년차)`}
+              ? `Active: ${profile.name} · ${DIFFICULTY_SETTINGS[profile.difficulty || 'normal']?.nameEn || 'Strategist Lead'}`
+              : `현재 설정: ${profile.name} · ${DIFFICULTY_SETTINGS[profile.difficulty || 'normal']?.nameKo || '전략 팀장 (표준)'}`}
           </span>
         </div>
       </div>
