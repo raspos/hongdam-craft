@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { ArrowRight, Award, BarChart2, Check, Flame, GitBranch, HelpCircle, Share2, Sparkles, TrendingDown } from 'lucide-react';
+import React from 'react';
+import { ArrowRight, Award, BarChart2, GitBranch, HelpCircle, Sparkles, TrendingDown } from 'lucide-react';
 import { PR_SKILLS } from '../data/skills';
 import { summarizeStageTelemetry } from '../engine/analyticsEngine';
 import { STAGE_RESOLUTION_META } from '../engine/progressionEngine';
 import { useLanguage } from '../i18n/LanguageContext';
 import { GameState, StageNumber } from '../types/game';
-import { buildStageSharePayload, shareOrCopyChallenge } from '../utils/challengeShare';
 import { sound } from '../utils/sound';
 
 interface StageReportModalProps {
@@ -24,25 +23,8 @@ export const StageReportModal: React.FC<StageReportModalProps> = ({
   onOpenMethodology,
 }) => {
   const { isEn } = useLanguage();
-  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const summary = state.lastStageSummary;
   if (!summary) return null;
-
-  const handleShareStage = async () => {
-    sound.playClick();
-    const payload = buildStageSharePayload(state, summary.stage, isEn);
-    const res = await shareOrCopyChallenge(payload, state.playId);
-    setShareFeedback(
-      res === 'shared'
-        ? isEn
-          ? 'Shared!'
-          : '공유 완료!'
-        : isEn
-          ? 'Challenge URL copied!'
-          : '도전장 링크·결과가 복사되었습니다!'
-    );
-    window.setTimeout(() => setShareFeedback(null), 3200);
-  };
 
   const resMeta = STAGE_RESOLUTION_META[summary.resolution];
   const telSummary = summarizeStageTelemetry(state.telemetryLogs, summary.stage);
@@ -370,46 +352,6 @@ export const StageReportModal: React.FC<StageReportModalProps> = ({
           </div>
         </div>
       )}
-
-      {/* Mid-Run Viral Share & Same-Seed Friend Challenge Banner */}
-      <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-rose-950/50 border border-amber-500/60 rounded-lg p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="space-y-0.5 text-xs">
-          <div className="font-pixel text-amber-300 font-bold flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-rose-400" />
-            <span>
-              {summary.stage === 1
-                ? isEn
-                  ? 'FIRST CRISIS SURVIVED! Share or Challenge a Friend Right Now'
-                  : '첫 단독기사 방어 완료! 6관문 끝까지 안 가도 지금 바로 결과를 공유할 수 있습니다'
-                : isEn
-                  ? `STAGE ${summary.stage} CLEARED — Send Same-Seed Crisis Challenge`
-                  : `STAGE ${summary.stage} 중간 성적 공유 & 동일 사건·기자 도전장 보내기`}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-300">
-            {isEn
-              ? `Generates a deterministic Challenge URL (Seed #${state.seed}) so friends face your exact company & reporter.`
-              : `내가 상대한 똑같은 회사·똑같은 기자(시드 #${state.seed}) 조건 그대로 친구가 직접 막아보게 도전장 링크를 보냅니다.`}
-          </p>
-        </div>
-
-        <button
-          onClick={handleShareStage}
-          className="pixel-btn-mc pixel-btn-mc-gold px-3.5 py-2 text-xs font-bold shrink-0 flex items-center gap-1.5"
-        >
-          {shareFeedback ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-emerald-300" />
-              <span>{shareFeedback}</span>
-            </>
-          ) : (
-            <>
-              <Share2 className="w-3.5 h-3.5" />
-              <span>{isEn ? 'Share / Challenge Friend' : '중간 결과·도전장 공유'}</span>
-            </>
-          )}
-        </button>
-      </div>
 
       {/* Action Buttons: Counterfactual WHAT-IF, Survival Sim, Next Stage */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
