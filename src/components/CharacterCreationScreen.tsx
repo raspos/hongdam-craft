@@ -67,13 +67,13 @@ const RANDOM_PR_NAMES = [
   '오대응',
 ];
 
-const QUICK_COMPANY_PRESETS = [
-  { name: '한빛테크놀로지', tagKo: 'IT·AI', tagEn: 'IT & AI' },
-  { name: '미래바이오', tagKo: '제약·바이오', tagEn: 'Bio' },
-  { name: '네오엔터테인먼트', tagKo: '엔터·미디어', tagEn: 'Media' },
-  { name: '대산물산', tagKo: '소비재·유통', tagEn: 'Retail' },
-  { name: '코리아모빌리티', tagKo: '완성차·제조', tagEn: 'Auto' },
-  { name: '태양건설', tagKo: '건설·금융', tagEn: 'Build' },
+const RANDOM_COMPANY_NAMES = [
+  '한빛테크놀로지',
+  '미래바이오',
+  '네오엔터테인먼트',
+  '대산물산',
+  '코리아모빌리티',
+  '태양건설',
 ];
 
 export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
@@ -105,9 +105,9 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
 
   const rollRandomCompany = () => {
     sound.playBlip();
-    const filtered = QUICK_COMPANY_PRESETS.filter((c) => c.name !== profile.companyName);
-    const chosen = filtered[Math.floor(Math.random() * filtered.length)] || QUICK_COMPANY_PRESETS[0];
-    onChangeProfile({ ...profile, companyName: chosen.name });
+    const filtered = RANDOM_COMPANY_NAMES.filter((c) => c !== profile.companyName);
+    const chosen = filtered[Math.floor(Math.random() * filtered.length)] || RANDOM_COMPANY_NAMES[0];
+    onChangeProfile({ ...profile, companyName: chosen });
   };
 
   const applyTenurePreset = (years: number, suit?: string, hair?: PRAppearance['hairStyle']) => {
@@ -377,7 +377,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
             <div className="flex items-center justify-between mb-1.5 font-pixel">
               <label className="text-slate-300 flex items-center gap-1">
                 <Building2 className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-bold">{isEn ? 'Company Name' : '소속 회사명 입력 / 선택'}</span>
+                <span className="font-bold">{isEn ? 'Company Name' : '소속 회사명'}</span>
               </label>
               <button
                 type="button"
@@ -406,38 +406,6 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
                   ? '* Scale & beat will be randomly assigned.'
                   : '* 기업 규모(스타트업~재벌)와 세부 업종은 무작위 배정됩니다.'}
             </div>
-          </div>
-        </div>
-
-        {/* Quick Company Preset Chips (1-Click Fill) */}
-        <div>
-          <div className="text-[11px] font-pixel text-slate-400 mb-1.5">
-            {isEn ? 'Quick Company Presets (Click to select):' : '추천 가상 회사 (클릭 시 자동 입력):'}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_COMPANY_PRESETS.map((c) => {
-              const active = profile.companyName === c.name;
-              return (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => {
-                    sound.playBlip();
-                    onChangeProfile({ ...profile, companyName: c.name });
-                  }}
-                  className={`px-2.5 py-1 rounded text-xs font-pixel transition-all border ${
-                    active
-                      ? 'bg-amber-500 text-slate-950 font-bold border-amber-300 shadow-[1px_1px_0_#000]'
-                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600 hover:text-white'
-                  }`}
-                >
-                  <span>{c.name}</span>
-                  <span className={`ml-1 text-[10px] ${active ? 'text-slate-950 font-bold' : 'text-slate-400'}`}>
-                    ({isEn ? c.tagEn : c.tagKo})
-                  </span>
-                </button>
-              );
-            })}
           </div>
         </div>
 
