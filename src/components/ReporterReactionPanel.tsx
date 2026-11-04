@@ -13,6 +13,7 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
   const { isEn } = useLanguage();
   const battle = state.stageBattle;
   const leadJournalist = battle?.journalists[0];
+  const coJournalist = battle?.journalists[1];
 
   if (!battle || !leadJournalist) return null;
 
@@ -100,8 +101,8 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
                   : 'bg-slate-900/95 border-sky-600/70 text-sky-100'
             }`}
           >
-            <div className="flex items-center justify-between text-xs font-bold">
-              <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs font-bold">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-base">{arch.badgeIcon}</span>
                 <span className="text-amber-300">
                   {isEn
@@ -109,15 +110,36 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
                     : `${leadJournalist.outletKo} ${leadJournalist.nameKo} ${leadJournalist.titleKo}`}
                 </span>
                 <span className="text-[10px] text-slate-400">({isEn ? arch.nameEn : arch.nameKo})</span>
+                {leadJournalist.isReturning && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 border border-purple-500 text-purple-200">
+                    🧠 {isEn ? 'Met Before' : '구면'}
+                  </span>
+                )}
+                {coJournalist && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 border border-amber-600 text-amber-300">
+                    {isEn ? `+Co: ${coJournalist.nameEn}` : `+공동취재: ${coJournalist.nameKo}`}
+                  </span>
+                )}
               </div>
-              <span className="text-[10px] text-slate-400 font-normal">
-                {isEn ? `Turn ${battle.turnNumber - 1}` : `${battle.turnNumber - 1}턴 직후`}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sky-300 font-pixel text-xs">
+                  {isEn ? 'TRUST' : '친밀·신뢰'} <b className="text-white">{leadJournalist.stats.intimacy}</b>
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  {isEn ? `Turn ${battle.turnNumber - 1}` : `${battle.turnNumber - 1}턴 직후`}
+                </span>
+              </div>
             </div>
 
             <div className="text-sm font-bold leading-relaxed pl-1 pt-0.5">
               “{isEn ? leadJournalist.currentDialogueEn : leadJournalist.currentDialogueKo}”
             </div>
+
+            {leadJournalist.intentProbed && leadJournalist.nextPlannedSkillId && (
+              <div className="text-[10px] text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-700/70 inline-block">
+                🔭 {isEn ? `Probed Next Action: [${JOURNALIST_COUNTER_SKILLS[leadJournalist.nextPlannedSkillId]?.nameEn}]` : `간파한 다음 취재: [${JOURNALIST_COUNTER_SKILLS[leadJournalist.nextPlannedSkillId]?.nameKo}]`}
+              </div>
+            )}
           </div>
 
           {/* 3. Reporter's Counter Action / Next Movement */}
@@ -259,8 +281,8 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
       ) : (
         /* Turn 1 Initial State (Before player uses a skill in this stage) */
         <div className="p-3 rounded-lg border-2 border-amber-500/70 bg-slate-900/90 font-pixel space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs font-bold">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-base">{arch.badgeIcon}</span>
               <span className="text-amber-300">
                 {isEn
@@ -268,10 +290,25 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
                   : `${leadJournalist.outletKo} ${leadJournalist.nameKo} ${leadJournalist.titleKo}`}
               </span>
               <span className="text-[10px] text-slate-400">({isEn ? arch.nameEn : arch.nameKo})</span>
+              {leadJournalist.isReturning && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 border border-purple-500 text-purple-200">
+                  🧠 {isEn ? 'Met Before' : '구면'}
+                </span>
+              )}
+              {coJournalist && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 border border-amber-600 text-amber-300">
+                  {isEn ? `+Co: ${coJournalist.nameEn}` : `+공동취재: ${coJournalist.nameKo}`}
+                </span>
+              )}
             </div>
-            <span className="text-[10px] text-rose-300 px-1.5 py-0.5 rounded bg-red-950 border border-red-700">
-              {isEn ? `Deadline: D-${battle.deadline}t` : `마감 D-${battle.deadline}턴`}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sky-300 text-xs">
+                {isEn ? 'TRUST' : '친밀·신뢰'} <b className="text-white">{leadJournalist.stats.intimacy}</b>
+              </span>
+              <span className="text-[10px] text-rose-300 px-1.5 py-0.5 rounded bg-red-950 border border-red-700">
+                {isEn ? `Deadline: D-${battle.deadline}t` : `마감 D-${battle.deadline}턴`}
+              </span>
+            </div>
           </div>
 
           <div className="text-xs text-amber-200 bg-amber-950/40 p-2 rounded border border-amber-600/40">

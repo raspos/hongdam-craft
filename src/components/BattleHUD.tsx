@@ -1,7 +1,6 @@
 import React from 'react';
 import { Activity, AlertTriangle, BarChart2, Flag, ShieldCheck, Target, Wallet } from 'lucide-react';
 import { COMPANY_SCALES, INDUSTRIES } from '../data/companies';
-import { JOURNALIST_ARCHETYPES, JOURNALIST_COUNTER_SKILLS } from '../data/journalists';
 import { STAGES } from '../data/stages';
 import { useLanguage } from '../i18n/LanguageContext';
 import { GameState } from '../types/game';
@@ -341,73 +340,6 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
           </div>
         )}
       </div>
-
-      {/* Journalist Dossier & Dialogue Card */}
-      {battle && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {battle.journalists.map((j, idx) => {
-            const arch = JOURNALIST_ARCHETYPES[j.archetype];
-            const nextMove = j.nextPlannedSkillId ? JOURNALIST_COUNTER_SKILLS[j.nextPlannedSkillId] : null;
-            return (
-              <div
-                key={j.memoryId}
-                className={`pixel-card p-3 space-y-2 ${
-                  battle.journalists.length === 1 ? 'sm:col-span-2' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{arch.badgeIcon}</span>
-                    <div>
-                      <div className="font-pixel text-xs sm:text-sm text-white font-bold flex items-center gap-1.5 flex-wrap">
-                        <span>{isEn ? `${j.nameEn} (${j.outletEn})` : `${j.outletKo} ${j.nameKo} ${j.titleKo}`}</span>
-                        {idx === 1 && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 border border-amber-600 text-amber-300">
-                            {isEn ? 'Co-Reporter' : '공동취재'}
-                          </span>
-                        )}
-                        {j.isReturning && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 border border-purple-500 text-purple-200">
-                            🧠 {isEn ? 'Met Before' : '구면 재등장'}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-amber-400 font-pixel">
-                        {isEn ? arch.nameEn : arch.nameKo}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right font-pixel text-xs">
-                    <div className="text-sky-300">
-                      {isEn ? 'TRUST' : '친밀·신뢰'} <span className="text-white font-bold">{j.stats.intimacy}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">
-                      {isEn ? 'Evidence' : '증거수준'}{' '}
-                      <span className="text-rose-300 font-bold">
-                        {j.isAnalyzed || j.intentProbed ? `${j.stats.evidenceLevel}%` : j.stats.evidenceLevel >= 70 ? 'HIGH' : 'MED'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reporter's Current Spoken Question (Speech Bubble) */}
-                {j.currentDialogueKo && (
-                  <div className="text-xs text-amber-100 bg-slate-950 px-3 py-2 rounded border-l-2 border-rose-500 font-pixel leading-relaxed">
-                    “{isEn ? j.currentDialogueEn : j.currentDialogueKo}”
-                  </div>
-                )}
-
-                {j.intentProbed && nextMove && (
-                  <div className="text-[11px] font-pixel text-indigo-300 bg-indigo-950/70 px-2.5 py-1 rounded border border-indigo-700">
-                    🔭 {isEn ? `Next Action: [${nextMove.nameEn}]` : `간파한 다음 취재 행동: [${nextMove.nameKo}]`}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };
