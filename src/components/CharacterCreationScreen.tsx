@@ -5,6 +5,7 @@ import {
   Dices,
   Flame,
   Gauge,
+  MessageSquareText,
   Play,
   Save,
   ShieldAlert,
@@ -41,6 +42,7 @@ interface CharacterCreationProps {
   onStartStage1: () => void;
   onOpenDataLab: () => void;
   onOpenSimulator: () => void;
+  onOpenBamboo?: () => void;
 }
 
 const SKIN_TONES = ['#fce5d4', '#f3cfb3', '#e5b899', '#c99372'];
@@ -73,6 +75,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
   onStartStage1,
   onOpenDataLab,
   onOpenSimulator,
+  onOpenBamboo,
 }) => {
   const { isEn } = useLanguage();
   const resemblesReal = checkResemblesRealCompany(profile.companyName);
@@ -608,22 +611,41 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
         </div>
       </div>
 
-      {/* Data Lab Secondary Entry */}
-      <div className="pt-0.5">
+      {/* Secondary Quick Entries: Data Lab & Bamboo Grove */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
         <button
+          type="button"
           onClick={() => {
             sound.playBlip();
             onOpenDataLab();
           }}
-          className="w-full py-2 rounded bg-slate-900 hover:bg-indigo-950/70 border border-indigo-500/50 text-xs font-pixel text-indigo-300 flex items-center justify-center gap-1.5 transition-colors"
+          className="w-full py-2 px-2.5 rounded bg-slate-900 hover:bg-indigo-950/70 border border-indigo-500/50 text-xs font-pixel text-indigo-300 flex items-center justify-center gap-1.5 transition-colors"
         >
           <BarChart3 className="w-3.5 h-3.5" />
           <span>
             {isEn
-              ? 'Explore HONGDAM DATA LAB Without Playing First'
-              : '게임 시작 전 [홍담 데이터랩 — 기사 막기의 통계학] 먼저 둘러보기'}
+              ? 'HONGDAM DATA LAB'
+              : '📊 홍담 데이터랩'}
           </span>
         </button>
+
+        {onOpenBamboo && (
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              onOpenBamboo();
+            }}
+            className="w-full py-2 px-2.5 rounded bg-slate-900 hover:bg-emerald-950/70 border border-emerald-600/50 text-xs font-pixel text-emerald-300 flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <MessageSquareText className="w-3.5 h-3.5 text-emerald-400" />
+            <span>
+              {isEn
+                ? 'PR Bamboo Grove Lounge'
+                : '🎋 익명 대나무숲 라운지'}
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

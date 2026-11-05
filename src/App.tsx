@@ -477,6 +477,7 @@ const HongdamAppInner: React.FC = () => {
                   onRerollCompany={handleRerollCompany}
                   onStartStage1={handleStartStage1}
                   onOpenDataLab={() => handleSwitchView('datalab')}
+                  onOpenBamboo={() => setShowBamboo(true)}
                   onOpenSimulator={() => setShowSurvivalSim(true)}
                 />
               </div>
@@ -535,6 +536,7 @@ const HongdamAppInner: React.FC = () => {
                   onOpenSurvivalSim={() => setShowSurvivalSim(true)}
                   onOpenMethodology={() => setShowMethodology(true)}
                   onResign={() => setDangerModal({ mode: 'resignation' })}
+                  onOpenBamboo={() => setShowBamboo(true)}
                 />
               </div>
 

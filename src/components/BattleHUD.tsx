@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, AlertTriangle, BarChart2, Flag, ShieldCheck, Target, Wallet } from 'lucide-react';
+import { Activity, AlertTriangle, BarChart2, Flag, MessageSquareText, ShieldCheck, Target, Wallet } from 'lucide-react';
 import { COMPANY_SCALES, INDUSTRIES } from '../data/companies';
 import { DIFFICULTY_SETTINGS } from '../engine/difficultyConfig';
 import { STAGES } from '../data/stages';
@@ -12,12 +12,14 @@ interface BattleHUDProps {
   onOpenSurvivalSim: () => void;
   onOpenMethodology: () => void;
   onResign: () => void;
+  onOpenBamboo?: () => void;
 }
 
 export const BattleHUD: React.FC<BattleHUDProps> = ({
   state,
   onOpenSurvivalSim,
   onResign,
+  onOpenBamboo,
 }) => {
   const { isEn } = useLanguage();
 
@@ -117,10 +119,24 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
               <span>{isEn ? 'Survival Odds' : '생존 확률'}</span>
             </button>
 
+            {onOpenBamboo && (
             <button
               onClick={() => {
                 sound.playClick();
-                onResign();
+                onOpenBamboo();
+              }}
+              className="px-2 py-1 rounded bg-slate-900 hover:bg-emerald-950/80 border border-slate-700 hover:border-emerald-500 text-[11px] font-pixel text-emerald-300 flex items-center gap-1 transition-all"
+              title={isEn ? 'PR Anonymous Bamboo Grove' : '홍담 익명 대나무숲 열기'}
+            >
+              <MessageSquareText className="w-3 h-3 text-emerald-400" />
+              <span>{isEn ? 'Lounge' : '대나무숲'}</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              sound.playClick();
+              onResign();
               }}
               className="px-2 py-1 rounded bg-slate-900 border border-slate-700 hover:border-rose-500 text-[11px] font-pixel text-slate-300 hover:text-rose-300 flex items-center gap-1"
               title={isEn ? 'Submit Resignation' : '사표 제출'}

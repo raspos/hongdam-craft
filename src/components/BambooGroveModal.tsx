@@ -13,11 +13,15 @@ import {
 } from 'lucide-react';
 import {
   adminDeletePost,
+  BambooCloudMode,
   createBambooPost,
+  DEFAULT_FIREBASE_RTDB_URL,
   fetchBambooPosts,
+  getFirebaseRtdbUrl,
   getSupabaseConfig,
   getUserVotedReactions,
   reportAndHidePost,
+  saveCustomFirebaseRtdbUrl,
   saveCustomSupabaseConfig,
   toggleBambooReaction,
 } from '../community/communityService';
@@ -52,7 +56,7 @@ const REACTIONS: { id: BambooReactionType; icon: string; ko: string; en: string 
 export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClose }) => {
   const { isEn } = useLanguage();
   const [posts, setPosts] = useState<BambooPost[]>([]);
-  const [mode, setMode] = useState<'supabase_cloud' | 'demo_sandbox'>('demo_sandbox');
+  const [mode, setMode] = useState<BambooCloudMode>('cloud_connected');
   const [loading, setLoading] = useState(true);
 
   const [selectedCat, setSelectedCat] = useState<BambooCategory>('all');
@@ -65,11 +69,12 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
   const [formMsg, setFormMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [votedMap, setVotedMap] = useState<Record<string, boolean>>(() => getUserVotedReactions());
 
-  // Optional Supabase Cloud Config Drawer
+  // Cloud Config Drawer
   const [showDbConfig, setShowDbConfig] = useState(false);
-  const existingCfg = getSupabaseConfig();
-  const [dbUrl, setDbUrl] = useState(existingCfg?.url || '');
-  const [dbKey, setDbKey] = useState(existingCfg?.anonKey || '');
+  const [firebaseCustomUrl, setFirebaseCustomUrl] = useState(() => getFirebaseRtdbUrl());
+  const existingSupaCfg = getSupabaseConfig();
+  const [supaUrl, setSupaUrl] = useState(existingSupaCfg?.url || '');
+  const [supaKey, setSupaKey] = useState(existingSupaCfg?.anonKey || '');
 
   // Admin Delete Prompt
   const [adminTargetPost, setAdminTargetPost] = useState<BambooPost | null>(null);
@@ -139,10 +144,10 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
     setFormMsg({
       ok: true,
       text:
-        mode === 'supabase_cloud'
+        mode !== 'demo_sandbox'
           ? isEn
-            ? 'Posted to shared Bamboo Grove!'
-            : '공용 대나무숲에 게시글이 등록되었습니다!'
+            ? 'Posted to live shared Bamboo Grove!'
+            : '실시간 공용 대나무숲에 게시글이 성공적으로 등록되었습니다!'
           : isEn
             ? 'Saved in local Demo Sandbox mode (visible in this browser).'
             : '데모 모드: 현재 브라우저 데모 게시글로 등록되었습니다.',
@@ -200,8 +205,8 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
             </div>
             <p className="text-xs text-slate-400 mt-1">
               {isEn
-                ? 'Anonymous community lounge for PR chiefs to share crisis war stories and ending badges.'
-                : '전국의 홍보팀장들이 오늘 막아낸(혹은 못 막은) 기사 무용담과 엔딩 배지를 나누는 익명 게시판입니다.'}
+                ? 'Live anonymous community lounge for PR chiefs to share crisis war stories and ending badges.'
+                : '전국의 홍보팀장들이 오늘 막아낸(혹은 못 막은) 기사 무용담과 엔딩 배지를 나누는 실시간 익명 라운지입니다.'}
             </p>
           </div>
 
@@ -209,7 +214,7 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
             <button
               onClick={() => setShowDbConfig(!showDbConfig)}
               className="p-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 hover:text-emerald-300"
-              title={isEn ? 'Configure Supabase Cloud DB' : '공용 Supabase DB 연결 설정'}
+              title={isEn ? 'Configure Cloud DB' : '공용 대나무숲 DB 연결 설정'}
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -222,14 +227,24 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
           </div>
         </div>
 
-        {/* Explicit DB / Demo Mode Honesty Banner (Section 27 Mandatory Rule!) */}
-        {mode === 'supabase_cloud' ? (
-          <div className="bg-emerald-950/50 border border-emerald-500/70 rounded p-2.5 text-xs font-pixel text-emerald-200 flex items-center gap-2">
-            <Cloud className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>
-              {isEn
-                ? '[CLOUD CONNECTED] Connected to shared Supabase database (hongdam_posts).'
-                : '[실시간 공용 DB 연결됨] 외부 Supabase 데이터베이스와 연동되어 다른 사용자들과 게시글이 공유됩니다.'}
+        {/* Live Cloud Connection Status Banner */}
+        {mode !== 'demo_sandbox' ? (
+          <div className="bg-emerald-950/60 border border-emerald-500/70 rounded p-2.5 text-xs font-pixel text-emerald-200 flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <Cloud className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                {mode === 'supabase_cloud'
+                  ? isEn
+                    ? '[SUPABASE CLOUD CONNECTED] Connected to shared Supabase database (hongdam_posts).'
+                    : '[공용 Supabase DB 연결됨] Supabase 데이터베이스와 연동되어 게시글이 실시간 공유됩니다.'
+                  : isEn
+                    ? '[LIVE CLOUD CONNECTED] Connected to shared real-time database. Posts & reactions sync live across all PR leads.'
+                    : '[실시간 공용 대나무숲 연결됨] 실시간 클라우드 DB와 연동되어 모든 홍보팀장들의 게시글과 공감이 실시간 공유됩니다.'}
+              </span>
+            </div>
+            <span className="text-[10px] text-emerald-400 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-600/40 shrink-0 font-bold">
+              ● {isEn ? 'LIVE' : '실시간 연동'}
             </span>
           </div>
         ) : (
@@ -237,50 +252,91 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
             <Database className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-amber-300">
-                {isEn ? '[DEMO MODE — LOCAL SANDBOX] ' : '[데모 모드 안내] '}
+                {isEn ? '[LOCAL DEMO SANDBOX] ' : '[로컬 데모 모드] '}
               </span>
               <span>
                 {isEn
-                  ? 'No external Supabase key is currently configured. Preset stories are labeled [SAMPLE], and new posts are stored in this browser’s Demo Sandbox (never disguised as global user posts). Click ⚙️ to connect a Supabase project anytime.'
-                  : '현재 공용 클라우드 DB 환경변수가 연결되지 않아 [데모 모드]로 동작 중입니다. 기본 수록글은 [예시 글]로 구분 표시되며, 작성하시는 글은 현재 브라우저 데모 저장소에 보관됩니다 (⚙️ 버튼에서 Supabase URL/Key 연결 가능).'}
+                  ? 'Currently disconnected from cloud DB. Posts will be saved in your browser locally. Click ⚙️ to reconnect.'
+                  : '오프라인 상태입니다. 작성한 글은 현재 브라우저에 임시 보관됩니다. ⚙️ 버튼에서 클라우드 재연결을 시도할 수 있습니다.'}
               </span>
             </div>
           </div>
         )}
 
-        {/* Optional Supabase Connection Panel */}
+        {/* Database Connection Settings Panel */}
         {showDbConfig && (
           <div className="bg-slate-950 border border-emerald-500/60 rounded p-3 space-y-2 text-xs">
-            <div className="font-pixel text-emerald-300 font-bold">
-              🔌 {isEn ? 'Optional Supabase REST Connection' : '공용 Supabase DB 직접 연결 (선택)'}
+            <div className="font-pixel text-emerald-300 font-bold flex items-center justify-between">
+              <span>🔌 {isEn ? 'Realtime Database Settings' : '실시간 대나무숲 DB 연결 설정'}</span>
+              <span className="text-[11px] text-slate-400 font-normal">
+                {isEn ? 'Default: Shared Realtime Cloud' : '기본: 실시간 공용 클라우드 (Firebase RTDB)'}
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-slate-400 block font-pixel">
+                {isEn ? 'Realtime Cloud DB Endpoint' : '실시간 클라우드 DB 주소 (기본값 제공)'}
+              </label>
               <input
                 type="text"
-                value={dbUrl}
-                onChange={(e) => setDbUrl(e.target.value)}
-                placeholder="https://xxxx.supabase.co"
-                className="voxel-input text-xs"
-              />
-              <input
-                type="password"
-                value={dbKey}
-                onChange={(e) => setDbKey(e.target.value)}
-                placeholder="Supabase anon public key"
-                className="voxel-input text-xs"
+                value={firebaseCustomUrl}
+                onChange={(e) => setFirebaseCustomUrl(e.target.value)}
+                placeholder={DEFAULT_FIREBASE_RTDB_URL}
+                className="voxel-input text-xs w-full"
               />
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="pt-2 border-t border-slate-800 space-y-1.5">
+              <label className="text-[11px] text-slate-400 block font-pixel">
+                {isEn ? 'Or Custom Supabase REST API (Optional)' : '또는 직접 운영하는 Supabase DB 연동 (선택)'}
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={supaUrl}
+                  onChange={(e) => setSupaUrl(e.target.value)}
+                  placeholder="https://xxxx.supabase.co"
+                  className="voxel-input text-xs"
+                />
+                <input
+                  type="password"
+                  value={supaKey}
+                  onChange={(e) => setSupaKey(e.target.value)}
+                  placeholder="Supabase anon public key"
+                  className="voxel-input text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  saveCustomSupabaseConfig(dbUrl, dbKey);
+                  setFirebaseCustomUrl(DEFAULT_FIREBASE_RTDB_URL);
+                  saveCustomFirebaseRtdbUrl('');
+                  saveCustomSupabaseConfig('', '');
+                  setSupaUrl('');
+                  setSupaKey('');
+                  setShowDbConfig(false);
+                  loadPosts();
+                }}
+                className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-[11px] text-slate-300 hover:text-white"
+              >
+                {isEn ? 'Reset to Default Cloud' : '기본 공용 서버로 초기화'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  saveCustomFirebaseRtdbUrl(firebaseCustomUrl);
+                  if (supaUrl && supaKey) {
+                    saveCustomSupabaseConfig(supaUrl, supaKey);
+                  }
                   setShowDbConfig(false);
                   loadPosts();
                 }}
                 className="pixel-btn-mc pixel-btn-mc-primary px-3 py-1.5 text-xs"
               >
-                {isEn ? 'Save & Reconnect' : '저장 및 재연결'}
+                {isEn ? 'Save & Connect' : '저장 및 실시간 연결'}
               </button>
             </div>
           </div>
@@ -333,140 +389,149 @@ export const BambooGroveModal: React.FC<BambooGroveModalProps> = ({ state, onClo
             />
             <button
               type="submit"
-              className="pixel-btn-mc pixel-btn-mc-primary px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0"
+              className="pixel-btn-mc pixel-btn-mc-gold px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isEn ? 'Post' : '글 남기기'}</span>
+              <span>{isEn ? 'Post' : '등록'}</span>
             </button>
           </div>
 
           {formMsg && (
             <div
-              className={`text-[11px] font-pixel flex items-center gap-1.5 ${
-                formMsg.ok ? 'text-emerald-400' : 'text-rose-400'
+              className={`p-2 rounded text-[11px] font-pixel flex items-center gap-1.5 ${
+                formMsg.ok
+                  ? 'bg-emerald-950 border border-emerald-600 text-emerald-300'
+                  : 'bg-rose-950 border border-rose-600 text-rose-300'
               }`}
             >
-              <AlertCircle className="w-3.5 h-3.5" />
+              {formMsg.ok ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
               <span>{formMsg.text}</span>
             </div>
           )}
         </form>
 
-        {/* Category Tabs & Sort */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1 overflow-x-auto pb-1">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => {
-                  sound.playBlip();
-                  setSelectedCat(c.id);
-                }}
-                className={`px-2.5 py-1 rounded text-xs font-pixel whitespace-nowrap border ${
-                  selectedCat === c.id
-                    ? 'bg-emerald-700 text-white border-emerald-400 font-bold'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                }`}
-              >
-                {isEn ? c.en : c.ko}
-              </button>
-            ))}
+        {/* Filter & Sort Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-pixel border-b border-slate-800 pb-2">
+          <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+            {CATEGORIES.map((c) => {
+              const active = selectedCat === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCat(c.id)}
+                  className={`px-2 py-1 rounded text-[11px] whitespace-nowrap transition-all border ${
+                    active
+                      ? 'bg-emerald-900/80 border-emerald-400 text-emerald-200 font-bold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {isEn ? c.en : c.ko}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex items-center gap-1 text-xs font-pixel">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setSortBy('latest')}
-              className={`px-2 py-1 rounded border ${
-                sortBy === 'latest'
-                  ? 'bg-slate-800 text-amber-300 border-amber-500'
-                  : 'bg-slate-950 text-slate-400 border-slate-800'
+              className={`px-2 py-0.5 rounded text-[11px] ${
+                sortBy === 'latest' ? 'text-amber-300 font-bold' : 'text-slate-500'
               }`}
             >
               {isEn ? 'Latest' : '최신순'}
             </button>
+            <span className="text-slate-700">·</span>
             <button
               onClick={() => setSortBy('popular')}
-              className={`px-2 py-1 rounded border ${
-                sortBy === 'popular'
-                  ? 'bg-slate-800 text-amber-300 border-amber-500'
-                  : 'bg-slate-950 text-slate-400 border-slate-800'
+              className={`px-2 py-0.5 rounded text-[11px] ${
+                sortBy === 'popular' ? 'text-amber-300 font-bold' : 'text-slate-500'
               }`}
             >
-              {isEn ? 'Top Reacted' : '공감순'}
+              {isEn ? 'Popular' : '공감순'}
             </button>
           </div>
         </div>
 
-        {/* Admin Delete Inline Modal */}
+        {/* Admin Delete Confirmation Prompt */}
         {adminTargetPost && (
-          <div className="bg-rose-950/80 border border-rose-500 rounded p-3 flex flex-wrap items-center justify-between gap-2 text-xs font-pixel">
-            <div className="flex items-center gap-2 text-rose-200">
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              <span>
-                {isEn
-                  ? `Admin Delete [${adminTargetPost.authorNickname}]: Enter passcode`
-                  : `[${adminTargetPost.authorNickname}] 게시글 관리자 삭제 코드 입력:`}
-              </span>
+          <div className="bg-rose-950/90 border-2 border-rose-600 rounded p-3 text-xs space-y-2 font-pixel">
+            <div className="flex items-center justify-between text-rose-300 font-bold">
+              <span>⚠️ {isEn ? 'Administrator Deletion' : '관리자 권한 게시글 삭제'}</span>
+              <button
+                onClick={() => {
+                  setAdminTargetPost(null);
+                  setAdminCode('');
+                }}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
-            <div className="flex items-center gap-1.5">
+            <p className="text-rose-100 text-[11px]">
+              {isEn
+                ? `Delete post #${adminTargetPost.id.slice(0, 8)}? Enter admin passcode to confirm.`
+                : `게시글 #${adminTargetPost.id.slice(0, 8)}을 삭제하시겠습니까? 관리자 암호를 입력하세요.`}
+            </p>
+            <div className="flex gap-2">
               <input
                 type="password"
                 value={adminCode}
                 onChange={(e) => setAdminCode(e.target.value)}
-                placeholder={mode === 'demo_sandbox' ? 'hongdam-admin' : 'Passcode'}
-                className="voxel-input py-1 px-2 text-xs w-36"
+                placeholder={isEn ? 'Admin Passcode' : '관리자 인증 코드'}
+                className="voxel-input text-xs flex-1"
               />
               <button
                 onClick={handleAdminDeleteConfirm}
-                className="px-2.5 py-1 rounded bg-rose-600 text-white font-bold"
+                className="pixel-btn-mc pixel-btn-mc-danger px-3 py-1 text-xs"
               >
-                {isEn ? 'Delete' : '삭제'}
-              </button>
-              <button
-                onClick={() => setAdminTargetPost(null)}
-                className="px-2 py-1 rounded bg-slate-800 text-slate-300"
-              >
-                ✕
+                {isEn ? 'Confirm Delete' : '삭제 실행'}
               </button>
             </div>
           </div>
         )}
 
         {/* Posts List */}
-        <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+        <div className="space-y-3">
           {loading ? (
-            <div className="text-center py-8 font-pixel text-xs text-slate-400">
-              {isEn ? 'Loading Bamboo Grove...' : '대나무숲 글을 불러오는 중...'}
+            <div className="text-center py-10 text-slate-500 font-pixel text-xs animate-pulse">
+              {isEn ? 'Connecting to Bamboo Grove...' : '실시간 대나무숲에 연결 중...'}
+            </div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="text-center py-10 text-slate-500 font-pixel text-xs">
+              {isEn
+                ? 'No posts in this category yet. Be the first PR chief to post!'
+                : '해당 분류에 등록된 글이 없습니다. 첫 번째 후기를 남겨보세요!'}
             </div>
           ) : (
             filteredPosts.map((post) => {
-              const catObj = CATEGORIES.find((c) => c.id === post.category);
+              const catDef = CATEGORIES.find((c) => c.id === post.category);
               return (
                 <div
                   key={post.id}
-                  className="pixel-slot p-3 space-y-2 border-slate-800 hover:border-slate-700"
+                  className={`bg-slate-900/90 border rounded-lg p-3.5 space-y-2 transition-all ${
+                    post.isPresetSample
+                      ? 'border-slate-800 bg-slate-950/60'
+                      : 'border-emerald-600/50 hover:border-emerald-400'
+                  }`}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap font-pixel text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-1.5">
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="font-pixel text-white font-bold">{post.authorNickname}</span>
+                      {post.companyLabel && (
+                        <span className="text-[11px] text-slate-400 font-pixel">· {post.companyLabel}</span>
+                      )}
+                      {catDef && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-pixel bg-slate-800 text-emerald-300 border border-slate-700">
+                          {isEn ? catDef.en : catDef.ko}
+                        </span>
+                      )}
                       {post.isPresetSample && (
-                        <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-[10px] text-slate-300">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-pixel bg-slate-800 text-slate-400 border border-slate-700">
                           {isEn ? '[SAMPLE]' : '[예시 글]'}
                         </span>
                       )}
-                      {post.isLocalDemoOnly && !post.isPresetSample && (
-                        <span className="px-1.5 py-0.5 rounded bg-indigo-950 border border-indigo-500 text-[10px] text-indigo-200">
-                          {isEn ? '[My Browser Demo]' : '[내 브라우저 데모 글]'}
-                        </span>
-                      )}
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-950/90 border border-emerald-700 text-[10px] text-emerald-300">
-                        {catObj ? (isEn ? catObj.en : catObj.ko) : post.category}
-                      </span>
-                      <span className="text-white font-bold">{post.authorNickname}</span>
-                      {post.companyLabel && (
-                        <span className="text-[11px] text-slate-400">· {post.companyLabel}</span>
-                      )}
-                      {(post.endingBadgeKo || post.endingBadgeEn) && (
-                        <span className="px-1.5 py-0.5 rounded bg-amber-950 border border-amber-600 text-[10px] text-amber-300">
+                      {post.endingBadgeKo && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-pixel bg-amber-950/80 border border-amber-600/70 text-amber-300">
                           🏆 {isEn ? post.endingBadgeEn || post.endingBadgeKo : post.endingBadgeKo}
                         </span>
                       )}
