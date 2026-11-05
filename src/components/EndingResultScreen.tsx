@@ -306,13 +306,13 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
           </div>
 
           {/* Action CTA Strip */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => {
                 sound.playClick();
                 onOpenShareCard();
               }}
-              className="pixel-btn-mc pixel-btn-mc-gold px-3.5 py-2 text-xs font-bold flex items-center gap-1.5"
+              className="pixel-btn-mc pixel-btn-mc-gold px-3.5 py-2 text-xs font-bold flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>{isEn ? 'Share Card (PNG)' : '공유 카드 저장'}</span>
@@ -323,7 +323,7 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
                 sound.playClick();
                 onOpenBambooWithEnding();
               }}
-              className="pixel-btn-mc px-3.5 py-2 text-xs font-bold bg-emerald-800 border-emerald-400 text-white flex items-center gap-1.5"
+              className="pixel-btn-mc px-3.5 py-2 text-xs font-bold bg-emerald-800 border-emerald-400 text-white flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <MessageSquarePlus className="w-3.5 h-3.5" />
               <span>{isEn ? 'Post to Bamboo Grove' : '대나무숲에 소감 남기기'}</span>
@@ -331,7 +331,7 @@ export const EndingResultScreen: React.FC<EndingResultScreenProps> = ({
           </div>
         </div>
 
-        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950/90 p-4 rounded-lg border border-slate-800">
+        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950/90 p-4 rounded-lg border border-slate-800 break-keep">
           {isEn ? endDef.storyEn : endDef.storyKo}
         </p>
 

@@ -95,13 +95,13 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
             <span className="px-2 py-0.5 rounded bg-red-950 border border-red-500 font-pixel text-xs text-red-200 font-bold">
               STAGE {state.currentStage}/6 {stageDef.stars}
             </span>
-            <span className="font-pixel text-xs sm:text-sm text-white font-bold">
+            <span className="font-pixel text-xs sm:text-sm text-white font-bold break-keep">
               {state.player.companyName}
             </span>
-            <span className="text-[11px] font-pixel text-amber-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+            <span className="text-[11px] font-pixel text-amber-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 break-keep">
               {indDef.icon} {isEn ? `${scaleDef.nameEn} · ${indDef.nameEn}` : `${scaleDef.nameKo} · ${indDef.nameKo}`}
             </span>
-            <span className="text-[11px] font-pixel text-sky-300">
+            <span className="text-[11px] font-pixel text-sky-300 break-keep">
               {state.player.name} · {isEn ? diffSetting.badgeEn : diffSetting.badgeKo}
             </span>
           </div>
@@ -209,7 +209,7 @@ export const BattleHUD: React.FC<BattleHUDProps> = ({
                 <span className="text-slate-400 text-[10px] block">
                   {isEn ? 'Assessment' : '상황 진단'}
                 </span>
-                <span className="text-[11px] font-medium text-slate-200 line-clamp-1">
+                <span className="text-[11px] font-medium text-slate-200 line-clamp-1 break-keep">
                   {isEn ? missionStatus.descEn : missionStatus.descKo}
                 </span>
               </div>

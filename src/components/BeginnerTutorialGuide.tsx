@@ -136,7 +136,7 @@ export const BeginnerTutorialGuide: React.FC<BeginnerTutorialGuideProps> = ({
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>{isEn ? titleEn : titleKo}</span>
         </div>
-        <p className="text-[11px] sm:text-xs text-slate-200 leading-relaxed font-sans font-medium pl-5">
+        <p className="text-[11px] sm:text-xs text-slate-200 leading-relaxed font-sans font-medium pl-5 break-keep">
           {isEn ? bodyEn : bodyKo}
         </p>
       </div>

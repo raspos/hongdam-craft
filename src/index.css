@@ -14,12 +14,20 @@
     color: #f8fafc;
     user-select: none;
     overflow-x: hidden;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 }
 
 .font-pixel {
   font-family: 'DungGeunMo', monospace;
   letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+
+.break-keep {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* 크래프트 시리즈 공통 복셀/픽셀 UI 시스템 (인사 크래프트 디자인 정합성) */

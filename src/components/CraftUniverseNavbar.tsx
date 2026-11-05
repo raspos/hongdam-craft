@@ -59,16 +59,16 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
                 {SHOW_CRAFT_UNIVERSE && (
-                  <span className="font-pixel text-[11px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-amber-300 font-bold tracking-wider">
+                  <span className="font-pixel text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-amber-300 font-bold tracking-wider w-fit">
                     {CRAFT_UNIVERSE_BRAND.title}
                   </span>
                 )}
-                <h1 className="font-pixel text-base sm:text-lg text-white font-extrabold tracking-tight">
+                <h1 className="font-pixel text-sm sm:text-base lg:text-lg text-white font-extrabold tracking-tight whitespace-nowrap leading-none">
                   {isEn ? 'HONGDAM CRAFT' : '홍담 크래프트'}
                 </h1>
-                <span className="text-[10px] font-pixel text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-800">
+                <span className="text-[9px] sm:text-[10px] font-pixel text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-800 whitespace-nowrap w-fit">
                   {isEn ? 'PR Crisis Sim' : '기사 막기 전쟁'}
                 </span>
               </div>
@@ -94,7 +94,7 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
                 sound.playClick();
                 onOpenBamboo();
               }}
-              className="px-2 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/70 text-[11px] font-pixel text-emerald-300 flex items-center gap-1"
+              className="px-1.5 py-1 rounded bg-emerald-950/80 border border-emerald-600/70 text-[10px] sm:text-[11px] font-pixel text-emerald-300 flex items-center gap-0.5"
               title={isEn ? 'PR Anonymous Bamboo Grove' : '홍담 익명 대나무숲'}
             >
               <MessageSquareText className="w-3 h-3 text-emerald-400" />
@@ -105,7 +105,7 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
                 sound.playClick();
                 onOpenMethodology();
               }}
-              className="p-1.5 rounded-lg bg-slate-900 border border-slate-700 text-sky-300"
+              className="p-1 rounded bg-slate-900 border border-slate-700 text-sky-300"
               title={isEn ? 'Virtual Simulation Model' : '데이터저널리즘 가상 모형 설명'}
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -115,21 +115,21 @@ export const CraftUniverseNavbar: React.FC<CraftUniverseNavbarProps> = ({
                 sound.playClick();
                 toggleLanguage();
               }}
-              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[11px] font-pixel text-amber-300 flex items-center gap-1"
+              className="px-1.5 py-1 rounded bg-slate-900 border border-slate-700 text-[10px] sm:text-[11px] font-pixel text-amber-300 flex items-center gap-0.5"
             >
               <Globe className="w-3 h-3 text-amber-400" />
               <span>{language === 'ko' ? 'EN' : '한국어'}</span>
             </button>
             <button
               onClick={handleToggleSound}
-              className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300"
+              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300"
               title={isEn ? 'Toggle Sound' : '사운드 켜기/끄기'}
             >
               {muted ? <VolumeX className="w-3.5 h-3.5 text-slate-500" /> : <Volume2 className="w-3.5 h-3.5 text-red-400" />}
             </button>
             <button
               onClick={onResetGame}
-              className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
               title={isEn ? 'Reset Run' : '새 게임 초기화'}
             >
               <RotateCcw className="w-3.5 h-3.5" />

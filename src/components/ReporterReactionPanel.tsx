@@ -68,7 +68,7 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
   return (
     <div className="pixel-card p-3.5 sm:p-4 space-y-3 border-sky-500/50 bg-slate-950/90 shadow-lg">
       {/* Panel Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-800 pb-2">
         <div className="font-pixel text-xs sm:text-sm text-sky-300 font-bold flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-sky-400" />
           <span>{isEn ? 'REPORTER’S LIVE REACTION' : '취재 기자의 실시간 반응'}</span>
@@ -86,7 +86,7 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
               <span>{isEn ? 'MY CRISIS RESPONSE ACTION' : '내가 취한 홍보 대응'}</span>
               <span className="text-slate-400">({isEn ? lastSkill.nameEn : lastSkill.nameKo})</span>
             </div>
-            <div className="text-slate-200 italic pl-1">
+            <div className="text-slate-200 italic pl-1 break-keep">
               💬 {isEn ? lastSkill.catchphraseEn : lastSkill.catchphraseKo}
             </div>
           </div>
@@ -131,7 +131,7 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
               </div>
             </div>
 
-            <div className="text-sm font-bold leading-relaxed pl-1 pt-0.5">
+            <div className="text-sm font-bold leading-relaxed pl-1 pt-0.5 break-keep">
               “{isEn ? leadJournalist.currentDialogueEn : leadJournalist.currentDialogueKo}”
             </div>
 
@@ -320,7 +320,7 @@ export const ReporterReactionPanel: React.FC<ReporterReactionPanelProps> = ({ st
             </span>
           </div>
 
-          <div className="text-sm text-slate-100 font-bold leading-relaxed pt-1">
+          <div className="text-sm text-slate-100 font-bold leading-relaxed pt-1 break-keep">
             “{isEn ? leadJournalist.currentDialogueEn : leadJournalist.currentDialogueKo}”
           </div>
 

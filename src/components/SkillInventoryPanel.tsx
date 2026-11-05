@@ -216,12 +216,12 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
               </h4>
             </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 disabled={!focusedPreview.usable || isExecuting}
                 onClick={() => handleSkillTrigger(focusedSkill.id)}
-                className={`pixel-btn-mc px-4 py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+                className={`pixel-btn-mc w-full sm:w-auto px-4 py-2 text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${
                   !focusedPreview.usable || isExecuting
                     ? 'opacity-40 cursor-not-allowed'
                     : focusedPreview.lethalWarningType
@@ -246,13 +246,13 @@ export const SkillInventoryPanel: React.FC<SkillInventoryPanelProps> = ({
 
           {/* Prominent PR Crisis Action Wording */}
           <div className="bg-slate-900/90 border-l-4 border-amber-400 px-3 py-2 rounded-r shadow-inner">
-            <div className="font-pixel text-xs sm:text-sm text-amber-100 font-bold leading-relaxed">
+            <div className="font-pixel text-xs sm:text-sm text-amber-100 font-bold leading-relaxed break-keep">
               💬 {isEn ? focusedSkill.catchphraseEn : focusedSkill.catchphraseKo}
             </div>
           </div>
 
           {/* Concise Action Summary */}
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-300 leading-relaxed break-keep">
             {isEn ? focusedSkill.descEn : focusedSkill.descKo}
           </p>
 

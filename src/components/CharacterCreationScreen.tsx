@@ -241,7 +241,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
               : '데이터저널리즘 가상 시뮬레이션 인터랙티브 프로젝트'}
           </span>
         </div>
-        <h2 className="font-pixel text-lg sm:text-xl text-rose-300 font-bold mb-2 flex items-center gap-2">
+        <h2 className="font-pixel text-lg sm:text-xl text-rose-300 font-bold mb-2 flex items-center gap-2 break-keep">
           <span>🚨</span>
           <span>
             {isEn
@@ -249,7 +249,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
               : '“기사는 쏟아지고, 예산은 바닥나고, 팀장 목숨은 하나다.”'}
           </span>
         </h2>
-        <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+        <p className="text-slate-300 text-xs sm:text-sm leading-relaxed break-keep">
           {isEn
             ? 'You are a corporate PR Team Lead facing relentless exclusive scoops, whistleblowers, and executive scandals. Will you survive 6 crisis stages before midnight deadlines?'
             : '당신은 쏟아지는 단독 질문지와 데스크 마감 시계를 마주한 대한민국 기업 홍보팀장입니다. 신제품 오보부터 오너리스크까지, 6번의 위기에서 회사와 내 자리를 지켜낼 수 있을까요?'}
@@ -422,7 +422,7 @@ export const CharacterCreationScreen: React.FC<CharacterCreationProps> = ({
                         {diff.id === 'rookie' ? '×0.85' : diff.id === 'veteran' ? '×1.50' : '×1.00'}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                    <p className="text-[10px] text-slate-400 mt-1 leading-snug break-keep">
                       {isEn ? diff.descEn : diff.descKo}
                     </p>
                   </div>
